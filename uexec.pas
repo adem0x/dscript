@@ -1,0 +1,447 @@
+unit uexec;
+
+interface
+
+uses
+  uconst, SysUtils, Classes, ucorefunc, uproptable;
+
+type
+  TExec = class
+  private
+    globlevar: array [0 .. 1024 * 1024] of TValue;
+    tempvar: array [0 .. 1024 * 1024] of TValue;
+    Stack: array [0 .. 1024 * 1024] of TValue;
+    CallStack: array [0 .. 1024] of Integer;
+    ESP, EBP, CallESP: Integer;
+    FStringList: TStringList;
+    FCode: TList;
+    FCodeCount: Integer;
+    FCodeLen: Word;
+    FPropTable: TPropTable;
+    FIP, FIPEnd: Integer;
+    procedure RunError(S: string);
+  public
+    constructor Create(APropTable: TPropTable);
+    procedure CoreExec();
+    procedure Exec();
+    property StringList: TStringList read FStringList;
+    property Code: TList read FCode;
+    property CodeCount: Integer read FCodeCount;
+    property CodeLen: Word read FCodeLen;
+    property IP: Integer read FIP write FIP;
+    property IPEnd: Integer read FIPEnd write FIPEnd;
+  end;
+
+implementation
+
+uses
+  uemitter;
+
+procedure TExec.RunError(S: string);
+begin
+  raise Exception.Create('RunTimeError: ' + S + 'On Line: '+ IntToStr(IP));
+end;
+
+procedure TExec.Exec;
+begin
+  try
+  CoreExec
+  except
+   on E: Exception do
+    Writeln(E.Message);
+  end;
+end;
+
+constructor TExec.Create(APropTable: TPropTable);
+begin
+  if not Assigned(APropTable) then
+    raise Exception.Create('PropTable is nil in TExec');
+  FPropTable := APropTable;
+  FStringList := TStringList.Create;
+  FCode := TList.Create;
+end;
+
+procedure TExec.CoreExec();
+var
+  CodeBuf: PAnsiChar;
+  Ints: _TEmitInts;
+  _p1, _p2, _p3: PValue;
+  __p1, __p2, __p3: TValue;
+  neg: Integer;
+  ER, BR: Boolean;
+  S: string;
+  I: Integer;
+  procedure GetValue(var P: PAnsiChar; var Value: PValue);
+  var
+    i: Integer;
+    T: _TEmitInts;
+  begin
+    Value._Type := _PEmitInts(P)^;
+    Inc(P, SizeOf(_TEmitInts));
+    case Value._Type of
+      pint, pfunc:
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+        end;
+      pstring:
+        begin
+          Value._Int := PInteger(P)^;
+          Value._String := StringList[Value._Int];
+          Inc(P, SizeOf(Integer));
+        end;
+      iident, pfuncaddr:
+        begin
+          I := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          T := Value._Type;
+          if i > 0 then
+          begin
+            Value := @globlevar[i];
+            Value._String := FPropTable.varproptable[i];
+          end
+          else
+          begin
+            Value := @tempvar[EBP -i];
+            Value._String := '_T' + IntToStr(-i);
+          end;
+//          Value._Int := I;
+          if Value._Type = inone then
+            Value._Type := T;
+        end;
+    end;
+  end;
+
+  procedure Str2Int(var Value: PValue);
+  begin
+    Value._Type := pint;
+    Value._Int := StrToIntDef(Value._String, 0);
+  end;
+
+  procedure Int2Str(var Value: PValue);
+  begin
+    Value._Type := pstring;
+    Value._String := IntToStr(Value._Int)
+  end;
+
+begin
+  ER := False;
+  BR := False;
+  EBP := 0;
+  while IP < IPEnd do
+  begin
+    _p1 := @__p1;
+    _p2 := @__p2;
+    _p3 := @__p3;
+    CodeBuf := Code[IP];
+    Ints := _PEmitInts(CodeBuf)^;
+    Inc(CodeBuf, SizeOf(_TEmitInts));
+    case Ints of
+      inop:
+        begin
+        end;
+      ipush:
+        begin
+          GetValue(CodeBuf, _p1);
+          Inc(ESP);
+          Stack[ESP] := _p1^;
+        end;
+      ipop:
+        begin
+          GetValue(CodeBuf, _p1);
+          _p1^ := Stack[ESP];
+          Dec(ESP);
+        end;
+      iret:
+        begin
+          IP := CallStack[CallESP];
+          Dec(CallESP);
+          Continue;
+        end;
+      iebp:
+        begin
+          GetValue(CodeBuf, _p1);
+          Inc(EBP, _p1._Int);
+        end;
+      icall:
+        begin
+          Inc(CallESP);
+          CallStack[CallESP] := IP + 1;
+          GetValue(CodeBuf, _p1);
+          S := FPropTable.funcproptable[_p1._Int];
+          if S = '' then
+          begin
+            _p1._String := FPropTable.varproptable[_p1._Int];
+            RunError('function: ' + _p1._String + ' is not def');
+          end;
+          IP := StrToInt(S);
+          Continue;
+        end;
+      iread:
+        begin
+          GetValue(CodeBuf, _p1);
+          if _p1._Type = pint then
+            CoreRead(_p1._Int)
+          else
+          begin
+            _p1._Type := pstring;
+            CoreRead(_p1._String)
+          end;
+        end;
+      iwrite:
+        begin
+          GetValue(CodeBuf, _p1);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pint:
+              CoreWrite(_p1._Int);
+            pstring:
+              CoreWrite(StringList[(_p1._Int)]);
+          end;
+        end;
+      imov:
+        begin
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pfuncaddr:
+              begin
+                _p2._Type := pfuncaddr;
+                FPropTable.funcproptable[_p2._Int] :=
+                FPropTable.funcproptable[_p1._Int];
+              end;
+            pint:
+              begin
+                _p2._Type := pint;
+                _p2._Int := _p1._Int;
+              end;
+            pstring:
+              begin
+                _p2._Type := pstring;
+                _p2._Int := _p1._Int;
+                _p2._String := _p1._String;
+              end;
+          end;
+        end;
+      isub, iadd:
+        begin
+          if Ints = iadd then
+            neg := 1
+          else
+            neg := -1;
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          GetValue(CodeBuf, _p3);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          if _p2._Type = inone then
+            RunError('var ' + _p2._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pint:
+              begin
+                if _p2._Type = pstring then
+                  Str2Int(_p2);
+                _p3._Type := pint;
+                _p3._Int := _p1._Int + _p2._Int * neg;
+              end;
+            pstring:
+              begin
+                if _p2._Type = pint then
+                  Int2Str(_p2);
+                _p3._Type := pstring;
+                S := StringList.Strings[_p1._Int] +
+                StringList.Strings[_p2._Int];
+                I := StringList.IndexOf(S);
+                if I = -1  then
+                  I := StringList.Add(S);
+                _p3._Int := I;
+              end;
+          end;
+        end;
+      imul:
+        begin
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          GetValue(CodeBuf, _p3);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          if _p2._Type = inone then
+            RunError('var ' + _p2._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pint:
+              begin
+                if _p2._Type = pstring then
+                  Str2Int(_p2);
+                _p3._Type := pint;
+                _p3._Int := _p1._Int * _p2._Int;
+              end;
+          else
+            RunError('var ' + _p1._String + ' type error on line:' +
+              IntToStr(IP));
+          end;
+        end;
+      idiv:
+        begin
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          GetValue(CodeBuf, _p3);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          if _p2._Type = inone then
+            RunError('var ' + _p2._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pint:
+              begin
+                if _p2._Type = pstring then
+                  Str2Int(_p2);
+                _p3._Type := pint;
+                _p3._Int := _p1._Int div _p2._Int;
+              end;
+          else
+            RunError('var ' + _p1._String + ' type error on line:' +
+              IntToStr(IP));
+          end;
+        end;
+      imod:
+        begin
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          GetValue(CodeBuf, _p3);
+          if _p1._Type = inone then
+            RunError('var ' + _p1._String + ' is not def on line:' +
+              IntToStr(IP));
+          if _p2._Type = inone then
+            RunError('var ' + _p2._String + ' is not def on line:' +
+              IntToStr(IP));
+          case _p1._Type of
+            pint:
+              begin
+                if _p2._Type = pstring then
+                  Str2Int(_p2);
+                _p3._Type := pint;
+                _p3._Int := _p1._Int mod _p2._Int;
+              end;
+          else
+            RunError('var ' + _p1._String + ' type error on line:' +
+              IntToStr(IP));
+          end;
+        end;
+      icmp:
+        begin
+          GetValue(CodeBuf, _p1);
+          GetValue(CodeBuf, _p2);
+          case _p1._Type of
+            inone:
+              begin
+                if _p2._Type = _p1._Type then
+                  ER := True
+                else
+                  ER := False;
+              end;
+            pint:
+              begin
+                if _p2._Type = pstring then
+                  Str2Int(_p2);
+                if _p1._Int = _p2._Int then
+                  ER := True
+                else
+                  ER := False;
+
+                if _p1._Int > _p2._Int then
+                  BR := True
+                else
+                  BR := False;
+              end;
+            pstring:
+              begin
+                if _p2._Type = pint then
+                  Int2Str(_p2);
+                if _p1._String = _p2._String then
+                  ER := True
+                else
+                  ER := False;
+              end;
+          end;
+        end;
+      ijmp:
+        begin
+          GetValue(CodeBuf, _p1);
+          Inc(FIP, _p1._Int);
+          Continue;
+        end;
+      ije:
+        begin
+          if ER then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ijne:
+        begin
+          if not ER then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ijse:
+        begin
+          if (not BR) or (ER) then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ijs:
+        begin
+          if not BR then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ijbe:
+        begin
+          if BR or ER then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ijb:
+        begin
+          if BR then
+          begin
+            GetValue(CodeBuf, _p1);
+            Inc(FIP, _p1._Int);
+            Continue;
+          end;
+        end;
+      ihalt:
+        begin
+          CoreWrite('Halt');
+          Break;
+        end;
+    end;
+    Inc(FIP);
+  end;
+end;
+
+end.
