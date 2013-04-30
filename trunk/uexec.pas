@@ -6,20 +6,24 @@ uses
   uconst, SysUtils, Classes, ucorefunc, uproptable;
 
 type
+  TFunction = procedure;
   TExec = class
   private
     globlevar: array [0 .. 1024 * 1024] of TValue;
     tempvar: array [0 .. 1024 * 1024] of TValue;
-    Stack: array [0 .. 1024 * 1024] of TValue;
+    FStack: array [0 .. 1024 * 1024] of TValue;
     CallStack: array [0 .. 1024] of Integer;
-    ESP, EBP, CallESP: Integer;
+    FESP, EBP, CallESP: Integer;
     FStringList: TStringList;
     FCode: TList;
     FCodeCount: Integer;
     FCodeLen: Word;
     FPropTable: TPropTable;
     FIP, FIPEnd: Integer;
+    FFunctionList: TStringList;
     procedure RunError(S: string);
+    function GetStack(Index: Integer): PValue;
+    procedure SetStack(Index: Integer; const Value: PValue);
   public
     constructor Create(APropTable: TPropTable);
     procedure CoreExec();
@@ -30,6 +34,9 @@ type
     property CodeLen: Word read FCodeLen;
     property IP: Integer read FIP write FIP;
     property IPEnd: Integer read FIPEnd write FIPEnd;
+    function RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
+    property Stack[Index: Integer]: PValue read GetStack write SetStack;
+    property ESP:Integer read FESP;
   end;
 
 implementation
@@ -43,6 +50,8 @@ begin
 end;
 
 procedure TExec.Exec;
+var
+  I: Integer;
 begin
   try
   CoreExec
@@ -59,6 +68,7 @@ begin
   FPropTable := APropTable;
   FStringList := TStringList.Create;
   FCode := TList.Create;
+  FFunctionList := TStringList.Create;
 end;
 
 procedure TExec.CoreExec();
@@ -71,6 +81,7 @@ var
   ER, BR: Boolean;
   S: string;
   I: Integer;
+  m_FuncProp: PFuncProp;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
     i: Integer;
@@ -143,14 +154,14 @@ begin
       ipush:
         begin
           GetValue(CodeBuf, _p1);
-          Inc(ESP);
-          Stack[ESP] := _p1^;
+          Inc(FESP);
+          FStack[FESP] := _p1^;
         end;
       ipop:
         begin
           GetValue(CodeBuf, _p1);
-          _p1^ := Stack[ESP];
-          Dec(ESP);
+          _p1^ :=FStack[FESP];
+          Dec(FESP);
         end;
       iret:
         begin
@@ -168,13 +179,22 @@ begin
           Inc(CallESP);
           CallStack[CallESP] := IP + 1;
           GetValue(CodeBuf, _p1);
-          S := FPropTable.funcproptable[_p1._Int];
-          if S = '' then
+          m_FuncProp := FPropTable.funcproptable[_p1._Int];
+          if m_FuncProp.EntryAddr = -1 then
           begin
-            _p1._String := FPropTable.varproptable[_p1._Int];
-            RunError('function: ' + _p1._String + ' is not def');
+            I := FFunctionList.IndexOf(m_FuncProp.FuncName);
+            if I <> - 1 then
+            begin
+              TFunction(FFunctionList.Objects[I])();
+              Inc(FIP);
+              Continue;
+            end else
+            begin
+              _p1._String := FPropTable.funcproptable[_p1._Int].FuncName;
+              RunError('function: ' + _p1._String + ' is not def');
+            end;
           end;
-          IP := StrToInt(S);
+          IP := I;
           Continue;
         end;
       iread:
@@ -442,6 +462,26 @@ begin
     end;
     Inc(FIP);
   end;
+end;
+
+function TExec.GetStack(Index: Integer): PValue;
+begin
+  Result := @FStack[Index]
+end;
+
+function TExec.RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
+begin
+  Result := False;
+  if FFunctionList.IndexOf(AFuncName) = -1 then
+  begin
+    FFunctionList.AddObject(AFuncName, TObject(AFuncAddr));
+    Result := True;
+  end;
+end;
+
+procedure TExec.SetStack(Index: Integer; const Value: PValue);
+begin
+  FStack[Index] := Value^
 end;
 
 end.
