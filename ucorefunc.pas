@@ -7,6 +7,7 @@ procedure CoreWrite(S: string); overload;
 procedure CoreRead(var I: integer); overload;
 procedure CoreRead(var S: string); overload;
 
+
 implementation
 
 procedure CoreWrite(I: integer);

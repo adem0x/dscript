@@ -7,8 +7,7 @@ uses
 
 type
   TEmitter = class
-    StrList, VarnameList, TempVarnameList, FuncnameList, FuncParamnameList
-      : TStringList;
+
     EmitCoder, EmitFunCoder: TList;
     CodeLine: integer;
     FuncCodeLine: integer;
@@ -17,14 +16,7 @@ type
     FExec: TExec;
     FPropTable: TPropTable;
     m: TMemoryStream;
-    procedure ClearFuncParamAddr;
-    function FindAddr(varname: string): integer;
-    function FuncParamAddr(varname: string): integer;
-    function GetFuncStackAddr(varname: string): integer;
-    function GetStackAddr(varname: string): integer;
-    function GetStrAddr(strname: string): integer;
-    function GetTempVarAddr(varname: string): integer;
-    procedure ClearTempVar;
+
     function EmitNop(): integer;
     function DeleteCode(ALine :Integer): Boolean;
     procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1: TEmitInts);
@@ -46,92 +38,6 @@ implementation
 
 uses
   uparser;
-
-function TEmitter.GetStrAddr(strname: string): integer;
-begin
-  Result := StrList.IndexOf(strname);
-  if Result = -1 then
-  begin
-    StrList.Add(strname);
-    Result := StrList.IndexOf(strname);
-    FPropTable.varproptable[Result] := strname;
-  end;
-end;
-
-function TEmitter.GetFuncStackAddr(varname: string): integer;
-begin
-  if varname = '' then
-  begin
-    Result := 0;
-    Exit;
-  end;
-  Result := FuncnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    FuncnameList.Add(varname);
-    Result := FuncnameList.IndexOf(varname);
-  end;
-end;
-
-function TEmitter.FuncParamAddr(varname: string): integer;
-begin
-  Result := FuncParamnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    FuncParamnameList.Add(varname);
-    Result := FuncParamnameList.IndexOf(varname);
-  end;
-end;
-
-procedure TEmitter.ClearFuncParamAddr;
-begin
-  FuncParamnameList.Clear;
-  FuncParamnameList.Add('999888t');
-end;
-
-function TEmitter.GetStackAddr(varname: string): integer;
-begin
-  Result := FuncParamnameList.IndexOf(varname);
-  if Result = -1 then
-    Result := FuncnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    Result := VarnameList.IndexOf(varname);
-    if Result = -1 then
-    begin
-      VarnameList.Add(varname);
-      Result := VarnameList.IndexOf(varname);
-      FPropTable.varproptable[Result] := varname;
-    end;
-  end
-  else
-    Result := -Result;
-end;
-
-function TEmitter.FindAddr(varname: string): integer;
-begin
-  Result := TempVarnameList.IndexOf(varname);
-  if Result = -1 then
-    Result := FuncParamnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    Result := VarnameList.IndexOf(varname);
-    if Result = -1 then
-      Result := 0;
-  end
-  else
-    Result := -Result;
-end;
-
-function TEmitter.GetTempVarAddr(varname: string): integer;
-begin
-  Result := TempVarnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    TempVarnameList.Add(varname);
-    Result := TempVarnameList.IndexOf(varname);
-  end;
-end;
 
 function TEmitter.Ints2str(aInts: _TEmitInts): string;
 begin
@@ -163,17 +69,17 @@ begin
     FExec.Code.Add(EmitFunCoder[I]);
   for I := 0 to EmitCoder.Count - 1 do
     FExec.Code.Add(EmitCoder[I]);
-  if Assigned(StrList) then
-    FExec.StringList.AddStrings(StrList);
+  if Assigned(FPropTable.StrList) then
+    FExec.StringList.AddStrings(FPropTable.StrList);
   FExec.IP := EmitFunCoder.Count;
   FExec.IPEnd := FExec.Code.Count;
   EmitFunCoder.Clear;
   EmitCoder.Clear;
-  StrList.Clear;
-  VarnameList.Clear;
-  TempVarnameList.Clear;
-  FuncnameList.Clear;
-  FuncParamnameList.Clear;
+//  FPropTable.StrList.Clear;
+//  FPropTable.VarnameList.Clear;
+//  FPropTable.TempVarnameList.Clear;
+//  FPropTable.FuncnameList.Clear;
+//  FPropTable.FuncParamnameList.Clear;
 end;
 
 function TEmitter.EmitNop(): integer;
@@ -219,28 +125,11 @@ begin
   EmitCode(atoken, _p1, Param, Param, ALine);
 end;
 
-procedure TEmitter.ClearTempVar;
-begin
-  TempVarnameList.Clear;
-  TempVarnameList.Add('999888t');
-end;
-
 constructor TEmitter.Create(AExec: TExec; APropTable: TPropTable);
 begin
   FExec := AExec;
   FPropTable := APropTable;
   m := TMemoryStream.Create;
-
-  VarnameList := TStringList.Create;
-  VarnameList.Add('999888t');
-  TempVarnameList := TStringList.Create;
-  TempVarnameList.Add('999888t');
-  FuncnameList := TStringList.Create;
-  FuncnameList.Add('999888t');
-  StrList := TStringList.Create;
-  StrList.Add('999888t');
-  FuncParamnameList := TStringList.Create;
-  FuncParamnameList.Add('999888t');
 end;
 
 function TEmitter.DeleteCode(ALine: Integer): Boolean;

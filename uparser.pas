@@ -264,12 +264,12 @@ begin
   Result.sInstr := idents;
   if TempVar then
   begin
-    Result.iInstr := -FEmitter.gettempvaraddr(Result.sInstr);
+    Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
     Inc(TempVarCount);
   end
   else
   begin
-    Result.iInstr := FEmitter.getstackaddr(Result.sInstr);
+    Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
   end;
   case GetNextToken() of
     tkequal:
@@ -280,7 +280,7 @@ begin
         begin
           _p3.Ints := iident;
           _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FEmitter.gettempvaraddr(_p3.sInstr);
+          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
           FEmitter.EmitCode(ipop, _p3);
           FEmitter.EmitCode(imov, _p3, Result);
         end
@@ -298,16 +298,19 @@ begin
     tkleftpart:
       begin
         _p2 := stmt_callfunc;
-        if _p2.Ints = pfunc then
-          FEmitter.EmitCode(icall, Result)
-        else
-          FEmitter.EmitCode(imov, _p2, Result);
+        Result.Ints := pfunc;
+        Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
+        Result.sInstr := IntToStr(Result.iInstr);
+        FEmitter.EmitCode(icall, Result);
       end;
     tkleftbrace:
       begin
         _p2 := stmt_object;
         FEmitter.EmitCode(imov, _p2, Result);
       end;
+    tksemicolon:;
+    else
+    ParserError('unknown assign word' + GetToken);
   end;
   Dec(Stack);
 end;
@@ -335,7 +338,7 @@ begin
           _p2 := term;
           _p3.Ints := iident;
           _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FEmitter.gettempvaraddr(_p3.sInstr);
+          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
           FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
           Result := _p3;
         end;
@@ -469,7 +472,7 @@ begin
           _p2 := factor;
           _p3.Ints := iident;
           _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FEmitter.gettempvaraddr(_p3.sInstr);
+          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
           FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
           Result := _p3;
         end;
@@ -477,14 +480,14 @@ begin
         begin
           stmt_callfunc;
           Result.Ints := pfunc;
-          Result.iInstr := FEmitter.FindAddr(Result.sInstr);
+          Result.iInstr := FPropTable.FindAddr(Result.sInstr);
           if Result.iInstr = 0 then
-            Result.iInstr := FEmitter.getfuncstackaddr(Result.sInstr);
+            Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
           Result.sInstr := IntToStr(Result.iInstr);
           FEmitter.EmitCode(icall, Result);
           Result.Ints := iident;
           Result.sInstr := '1tempvar' + IntToStr(Stack);
-          Result.iInstr := -FEmitter.gettempvaraddr(_p3.sInstr);
+          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
           FEmitter.EmitCode(ipop, Result);
         end;
         tkfunc:
@@ -553,9 +556,9 @@ end;
 
 function TParser.sident(aIdent: string): integer;
 begin
-  Result := FEmitter.FindAddr(aIdent);
+  Result := FPropTable.FindAddr(aIdent);
   if Result = 0 then
-    Result := FEmitter.getstackaddr(aIdent);
+    Result := FPropTable.getstackaddr(aIdent);
 end;
 
 function TParser.sgetstring: string;
@@ -566,7 +569,7 @@ end;
 
 function TParser.sgetstring(s: string): integer;
 begin
-  Result := FEmitter.getstraddr(s);
+  Result := FPropTable.getstraddr(s);
 end;
 
 function TParser.stmt_read: TEmitInts;
@@ -577,7 +580,7 @@ begin
   Match(tkident);
   _p1.Ints := iident;
   _p1.sInstr := GetToken;
-  _p1.iInstr := FEmitter.getstackaddr(_p1.sInstr);
+  _p1.iInstr := FPropTable.getstackaddr(_p1.sInstr);
   FEmitter.EmitCode(iread, _p1);
 end;
 
@@ -597,10 +600,11 @@ var
   CurrentCodeLine, I, J: integer;
   _p1: TEmitInts;
   LineNo, LineNo2: Integer;
+  m_FuncProp: PFuncProp;
 begin
   if FEmitter.EmitFunc then  ParserError('do not support nest func');
   FFrontList.Clear;
-  FEmitter.ClearTempVar;
+  FPropTable.ClearTempVar;
   TempVarCount := 0;
   Inc(Stack);
   FEmitter.EmitFunc := True;
@@ -612,9 +616,7 @@ begin
   begin
     Match(tkident);
     FEmitter.FuncName := GetToken;
-    I := FEmitter.getfuncstackaddr(FEmitter.FuncName);
-    FPropTable.funcproptable[I] :=
-      IntToStr(FEmitter.codeline);
+    I := FPropTable.getfuncaddr(FEmitter.FuncName, FEmitter.codeline);
     Result.Ints := pfunc;
     Result.sInstr := FEmitter.FuncName;
     Result.iInstr := I;
@@ -622,15 +624,13 @@ begin
   else
   begin
     FEmitter.FuncName := '1AnonyMousFunc' + IntToStr(Stack);
-    I := FEmitter.getfuncstackaddr(FEmitter.FuncName);
-    FPropTable.funcproptable[I] :=
-    IntToStr(FEmitter.codeline);
+    I := FPropTable.getfuncaddr(FEmitter.FuncName, FEmitter.codeline);
     Result.Ints := pfuncaddr;
     Result.sInstr := FEmitter.FuncName;
     Result.iInstr := I;
   end;
   Match(tkleftpart);
-  FEmitter.clearfuncparamaddr;
+  FPropTable.clearfuncparamaddr;
   while True do
   begin
     case GetNextToken() of
@@ -640,7 +640,7 @@ begin
         begin
           _p1.Ints := iident;
           _p1.sInstr := sident;
-          _p1.iInstr := -FEmitter.funcparamaddr(_p1.sInstr);
+          _p1.iInstr := -FPropTable.funcparamaddr(_p1.sInstr);
           FEmitter.EmitCode(ipop, _p1);
         end;
       tkcomma:
@@ -664,10 +664,9 @@ begin
   begin
     //删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
-    I := FEmitter.getfuncstackaddr(FEmitter.FuncName);
-    J := StrToInt(FPropTable.funcproptable[I]);
-    Dec(J);
-    FPropTable.funcproptable[I] := IntToStr(J);
+    I := FPropTable.getfuncaddr(FEmitter.FuncName);
+    m_FuncProp := FPropTable.funcproptable[I];
+    Dec(m_FuncProp.EntryAddr)
   end
   else
   begin
@@ -692,6 +691,7 @@ var
   PushList: array [0 .. 100] of TEmitInts;
   PushI, I: integer;
 begin
+  Inc(Stack);
   Match(tkleftpart);
   PushI := 0;
   while True do
@@ -711,7 +711,7 @@ begin
         begin
           Result.Ints := pstring;
           Result.sInstr := sgetstring;
-          Result.iInstr := FEmitter.FindAddr(Result.sInstr);
+          Result.iInstr := FPropTable.FindAddr(Result.sInstr);
           PushList[PushI] := Result;
           Inc(PushI);
         end;
@@ -719,17 +719,34 @@ begin
         begin
           Result.Ints := iident;
           Result.sInstr := sident;
-          Result.iInstr := FEmitter.getstackaddr(Result.sInstr);
+          Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
           PushList[PushI] := Result;
           Inc(PushI);
         end;
       tkcomma:
         Match(tkcomma);
+      tkleftpart:
+        begin
+          stmt_callfunc;
+          Result.Ints := pfunc;
+          Result.iInstr := FPropTable.FindAddr(Result.sInstr);
+          if Result.iInstr = 0 then
+            Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
+          Result.sInstr := IntToStr(Result.iInstr);
+          FEmitter.EmitCode(icall, Result);
+          Result.Ints := iident;
+          Result.sInstr := '1tempvar' + IntToStr(Stack);
+          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+          FEmitter.EmitCode(ipop, Result);
+          if PushI <> 1 then ParserError('PushI Error');
+          PushList[0] := Result; 
+        end;
     end;
   end;
   for I := PushI - 1 downto 0 do
     FEmitter.EmitCode(ipush, PushList[I]);
   Match(tkrightpart);
+  Dec(Stack);
 end;
 
 function TParser.stmt_continue: TEmitInts;

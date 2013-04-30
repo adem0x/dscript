@@ -120,7 +120,7 @@ begin
   while (FSource^ = ' ') or (FSource^ = #10) or (FSource^ = #13) do
     Inc(FSource);
   InStr := 0;
-  if FSource = FSourceLen then
+  if FSource >= FSourceLen then
   begin
     Result := tkhalt;
     Exit;
@@ -136,6 +136,10 @@ begin
         begin
           StateToken := tkident;
         end;
+      #0:
+      begin
+        StateToken := tkaend;
+      end;
       ' ':
         StateToken := tkaend;
       #10:
@@ -327,7 +331,7 @@ end;
 
 procedure TLex.SetSource(const Value: PAnsiChar);
 begin
-  FSource := Value;
+  FSource := Value ;
   FSourceLen := FSource + Length(FSource);
 end;
 
