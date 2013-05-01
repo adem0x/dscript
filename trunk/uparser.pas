@@ -603,12 +603,12 @@ var
   LineNo, LineNo2: Integer;
   m_FuncProp: PFuncProp;
 begin
-  if FEmitter.EmitFunc then  ParserError('do not support nest func');
+  if FPropTable.EmitFunc then  ParserError('do not support nest func');
   FFrontList.Clear;
   FPropTable.ClearTempVar;
   TempVarCount := 0;
   Inc(Stack);
-  FEmitter.EmitFunc := True;
+  FPropTable.EmitFunc := True;
   CurrentCodeLine := FEmitter.codeline;
   FEmitter.codeline := FEmitter.funccodeline;
   LineNo := FEmitter.EmitNop();
@@ -616,18 +616,18 @@ begin
   if not AnonyMousFunc then
   begin
     Match(tkident);
-    FEmitter.FuncName := GetToken;
-    I := FPropTable.getfuncaddr(FEmitter.FuncName, FEmitter.codeline);
+    FPropTable.FuncName := GetToken;
+    I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
     Result.Ints := pfunc;
-    Result.sInstr := FEmitter.FuncName;
+    Result.sInstr := FPropTable.FuncName;
     Result.iInstr := I;
   end
   else
   begin
-    FEmitter.FuncName := '1AnonyMousFunc' + IntToStr(Stack);
-    I := FPropTable.getfuncaddr(FEmitter.FuncName, FEmitter.codeline);
+    FPropTable.FuncName := '1AnonyMousFunc' + IntToStr(Stack);
+    I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
     Result.Ints := pfuncaddr;
-    Result.sInstr := FEmitter.FuncName;
+    Result.sInstr := FPropTable.FuncName;
     Result.iInstr := I;
   end;
   Match(tkleftpart);
@@ -664,7 +664,7 @@ begin
   begin
     //删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
-    I := FPropTable.getfuncaddr(FEmitter.FuncName);
+    I := FPropTable.getfuncaddr(FPropTable.FuncName);
     m_FuncProp := FPropTable.funcproptable[I];
     Dec(m_FuncProp.EntryAddr)
   end
@@ -681,8 +681,8 @@ begin
   FEmitter.EmitCode(iret);
   FEmitter.funccodeline := FEmitter.codeline - CurrentCodeLine;
   FEmitter.codeline := CurrentCodeLine;
-  FEmitter.EmitFunc := False;
-  FEmitter.FuncName := '';
+  FPropTable.EmitFunc := False;
+  FPropTable.FuncName := '';
   Dec(Stack);
 end;
 
@@ -769,7 +769,7 @@ end;
 
 function TParser.stmt_var: TEmitInts;
 begin
-  if not FEmitter.EmitFunc then ParserError('var must be def in function');
+  if not FPropTable.EmitFunc then ParserError('var must be def in function');
   Match(tkvar);
   TempVar := True;
   stmt_assign;
@@ -778,7 +778,7 @@ end;
 
 function TParser.stmt_return: TEmitInts;
 begin
-  if not FEmitter.EmitFunc then ParserError('return must be def in function');
+  if not FPropTable.EmitFunc then ParserError('return must be def in function');
   Match(tkreturn);
   Result := sExp;
   FEmitter.EmitCode(ipush, Result);

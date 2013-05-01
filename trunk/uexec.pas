@@ -12,8 +12,8 @@ type
     globlevar: array [0 .. 1024 * 1024] of TValue;
     tempvar: array [0 .. 1024 * 1024] of TValue;
     FStack: array [0 .. 1024 * 1024] of TValue;
-    CallStack: array [0 .. 1024] of Integer;
-    FESP, EBP, CallESP: Integer;
+    CallStack, VarX: array [0 .. 1024] of Integer;
+    FESP, EBP, CallESP, VarXSP: Integer;
     FStringList: TStringList;
     FCode: TList;
     FCodeCount: Integer;
@@ -80,6 +80,7 @@ var
   S: string;
   I: Integer;
   m_FuncProp: PFuncProp;
+  VarI: Integer;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
     i: Integer;
@@ -103,20 +104,16 @@ var
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
-          T := Value._Type;
           if i > 0 then
           begin
             Value := @globlevar[i];
-            Value._String := FPropTable.varproptable[i];
+            Value._String := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
             Value := @tempvar[EBP -i];
-            Value._String := '_T' + IntToStr(-i);
+            Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
-//          Value._Int := I;
-//          if Value._Type = inone then
-//            Value._Type := T;
         end;
       pfuncaddr:
         begin
@@ -125,12 +122,12 @@ var
           if i > 0 then
           begin
             Value := @globlevar[i];
-            Value._String := FPropTable.varproptable[i];
+            Value._String := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
             Value := @tempvar[EBP -i];
-            Value._String := '_T' + IntToStr(-i);
+            Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
           Value._Type := pfuncaddr;
         end;
@@ -150,6 +147,8 @@ var
   end;
 
 begin
+  VarI := 0;
+  VarXSP := -1;
   ER := False;
   BR := False;
   EBP := 0;
@@ -183,6 +182,9 @@ begin
         begin
           IP := CallStack[CallESP];
           Dec(CallESP);
+
+          VarI := VarX[VarXSp];
+          Dec(VarXSP);
           Continue;
         end;
       iebp:
@@ -206,11 +208,14 @@ begin
               Continue;
             end else
             begin
-              _p1._String := FPropTable.funcproptable[_p1._Int].FuncName;
-              RunError('function: ' + _p1._String + ' is not def');
+              _p1._String := m_FuncProp.FuncName;
+              RunError('function: "' + _p1._String + '" is not def');
             end;
           end;
           IP := m_FuncProp.EntryAddr;
+          Inc(VarXSP);
+          VarX[VarXSp] := VarI;
+          VarI := _p1._Int;
           Continue;
         end;
       iread:
@@ -228,7 +233,7 @@ begin
         begin
           GetValue(CodeBuf, _p1);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -242,7 +247,7 @@ begin
           GetValue(CodeBuf, _p1);
           GetValue(CodeBuf, _p2);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pfuncaddr:
@@ -274,10 +279,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var ' + _p2._String + ' is not def on line:' +
+            RunError('var "' + _p2._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -307,10 +312,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var ' + _p2._String + ' is not def on line:' +
+            RunError('var "' + _p2._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -321,7 +326,7 @@ begin
                 _p3._Int := _p1._Int * _p2._Int;
               end;
           else
-            RunError('var ' + _p1._String + ' type error on line:' +
+            RunError('var "' + _p1._String + '" type error on line:' +
               IntToStr(IP));
           end;
         end;
@@ -331,10 +336,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var ' + _p2._String + ' is not def on line:' +
+            RunError('var "' + _p2._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -345,7 +350,7 @@ begin
                 _p3._Int := _p1._Int div _p2._Int;
               end;
           else
-            RunError('var ' + _p1._String + ' type error on line:' +
+            RunError('var "' + _p1._String + '" type error on line:' +
               IntToStr(IP));
           end;
         end;
@@ -355,10 +360,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var ' + _p1._String + ' is not def on line:' +
+            RunError('var "' + _p1._String + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var ' + _p2._String + ' is not def on line:' +
+            RunError('var "' + _p2._String + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -369,7 +374,7 @@ begin
                 _p3._Int := _p1._Int mod _p2._Int;
               end;
           else
-            RunError('var ' + _p1._String + ' type error on line:' +
+            RunError('var "' + _p1._String + '" type error on line:' +
               IntToStr(IP));
           end;
         end;

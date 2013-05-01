@@ -11,8 +11,6 @@ type
     EmitCoder, EmitFunCoder: TList;
     CodeLine: integer;
     FuncCodeLine: integer;
-    EmitFunc: boolean;
-    FuncName: string;
     FExec: TExec;
     FPropTable: TPropTable;
     m: TMemoryStream;
@@ -89,7 +87,7 @@ begin
   if not Assigned(EmitFunCoder) then
     EmitFunCoder := TList.Create;
   Result := CodeLine;
-  if not EmitFunc then
+  if not FPropTable.EmitFunc then
   begin
     EmitCode(inop);
 //    EmitCoder.Add(nil);
@@ -110,7 +108,7 @@ var
   P: Pointer;
 begin
   Param.Ints := inone;
-  if not EmitFunc then
+  if not FPropTable.EmitFunc then
   begin
     P := EmitCoder[ALine];
     FreeMem(P);
@@ -135,7 +133,7 @@ end;
 function TEmitter.DeleteCode(ALine: Integer): Boolean;
 begin
   Result := True;
-  if not EmitFunc then
+  if not FPropTable.EmitFunc then
   begin
     if ALine < EmitCoder.Count then
     begin
@@ -234,7 +232,7 @@ begin
   Writeln;
   GetMem(buf, m.Size);
   Move(m.Memory^, buf^, m.Size);
-  if not EmitFunc then
+  if not FPropTable.EmitFunc then
   begin
     if LineNo = -1 then
       EmitCoder.Add(buf)

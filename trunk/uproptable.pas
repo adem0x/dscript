@@ -14,12 +14,17 @@ type
   private
     FFuncPropCount: Integer;
     FFuncPropTable: array of TFuncProp;
+
+    FFuncVarPropTable: array of array of string;
     function GetFuncPropTable(Index: Integer): PFuncProp;
     procedure SetFuncPropTable(Index: Integer; const Value: PFuncProp);
+
+    procedure SetFuncVarPropTable(X,Y: Integer; const Value: string);
   public
-    varproptable: array [-10 .. 10] of string;
-      StrList, VarnameList, TempVarnameList, FuncNameList
-      : TStringList;
+    StrList, VarnameList, TempVarnameList, FuncNameList
+    : TStringList;
+    EmitFunc: boolean;
+    FuncName: string;
     constructor Create;
     function FindAddr(varname: string): integer;
     function GetFuncAddr(varname: string; entryaddr: Integer): Integer; overload;
@@ -28,7 +33,8 @@ type
     function GetStrAddr(strname: string): integer;
     function GetTempVarAddr(varname: string): integer;
     procedure ClearTempVar;
-  property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable write SetFuncPropTable;
+    function GetFuncVarPropTable(X, Y: Integer): string;
+    property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable write SetFuncPropTable;
   end;
 
 implementation
@@ -40,7 +46,6 @@ begin
   begin
     StrList.Add(strname);
     Result := StrList.IndexOf(strname);
-    varproptable[Result] := strname;
   end;
 end;
 
@@ -79,13 +84,15 @@ function TPropTable.GetStackAddr(varname: string): integer;
 begin
   Result := FuncnameList.IndexOf(varname);
   if Result = -1 then
+    Result := TempVarnameList.IndexOf(varname);
+  if Result = -1 then
   begin
     Result := VarnameList.IndexOf(varname);
     if Result = -1 then
     begin
       VarnameList.Add(varname);
       Result := VarnameList.IndexOf(varname);
-      varproptable[Result] := varname;
+      SetFuncVarPropTable(0, Result, varname);
     end;
   end
   else
@@ -106,12 +113,17 @@ begin
 end;
 
 function TPropTable.GetTempVarAddr(varname: string): integer;
+var
+  Y: Integer;
 begin
   Result := TempVarnameList.IndexOf(varname);
   if Result = -1 then
   begin
     TempVarnameList.Add(varname);
     Result := TempVarnameList.IndexOf(varname);
+    Y := FuncNameList.IndexOf(FuncName);
+    if Y = -1 then Y:= 0;
+    SetFuncVarPropTable(Y, Result, varname);
   end;
 end;
 procedure TPropTable.ClearTempVar;
@@ -151,6 +163,20 @@ begin
     FFuncPropCount := Index;
     FFuncPropTable[index - 1] := Value^;
   end;
+end;
+
+function TPropTable.GetFuncVarPropTable(X, Y: Integer): string;
+begin
+  if (Length(FFuncVarPropTable) > X) and (Length(FFuncVarPropTable[X]) > Y) then
+    Result := FFuncVarPropTable[X][Y];
+end;
+
+procedure TPropTable.SetFuncVarPropTable(X, Y: Integer;
+  const Value: string);
+begin
+  if Length(FFuncVarPropTable) <= X then SetLength(FFuncVarPropTable, X + 1);
+  if Length(FFuncVarPropTable[X]) <= Y then SetLength(FFuncVarPropTable[X], Y + 1);
+  FFuncVarPropTable[X][Y] := Value;
 end;
 
 end.
