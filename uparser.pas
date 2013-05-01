@@ -162,6 +162,7 @@ begin
       stmt_continue;
     tksemicolon:
       Match(tksemicolon);
+    tkhalt: ;
   else
     ParserError('not clear' + GetToken);
   end;
@@ -597,7 +598,7 @@ end;
 
 function TParser.stmt_func: TEmitInts;
 var
-  CurrentCodeLine, I, J: integer;
+  CurrentCodeLine, I: integer;
   _p1: TEmitInts;
   LineNo, LineNo2: Integer;
   m_FuncProp: PFuncProp;
@@ -630,7 +631,6 @@ begin
     Result.iInstr := I;
   end;
   Match(tkleftpart);
-  FPropTable.clearfuncparamaddr;
   while True do
   begin
     case GetNextToken() of
@@ -640,7 +640,7 @@ begin
         begin
           _p1.Ints := iident;
           _p1.sInstr := sident;
-          _p1.iInstr := -FPropTable.funcparamaddr(_p1.sInstr);
+          _p1.iInstr := -FPropTable.GetTempVarAddr(_p1.sInstr);
           FEmitter.EmitCode(ipop, _p1);
         end;
       tkcomma:

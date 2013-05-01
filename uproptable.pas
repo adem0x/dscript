@@ -18,12 +18,10 @@ type
     procedure SetFuncPropTable(Index: Integer; const Value: PFuncProp);
   public
     varproptable: array [-10 .. 10] of string;
-      StrList, VarnameList, TempVarnameList, FuncNameList, FuncParamnameList
+      StrList, VarnameList, TempVarnameList, FuncNameList
       : TStringList;
     constructor Create;
-    procedure ClearFuncParamAddr;
     function FindAddr(varname: string): integer;
-    function FuncParamAddr(varname: string): integer;
     function GetFuncAddr(varname: string; entryaddr: Integer): Integer; overload;
     function GetFuncAddr(varname: string): Integer; overload;
     function GetStackAddr(varname: string): integer;
@@ -77,27 +75,9 @@ begin
   Result := GetFuncAddr(varname, -1);
 end;
 
-function TPropTable.FuncParamAddr(varname: string): integer;
-begin
-  Result := FuncParamnameList.IndexOf(varname);
-  if Result = -1 then
-  begin
-    FuncParamnameList.Add(varname);
-    Result := FuncParamnameList.IndexOf(varname);
-  end;
-end;
-
-procedure TPropTable.ClearFuncParamAddr;
-begin
-  FuncParamnameList.Clear;
-  FuncParamnameList.Add('999888t');
-end;
-
 function TPropTable.GetStackAddr(varname: string): integer;
 begin
-  Result := FuncParamnameList.IndexOf(varname);
-  if Result = -1 then
-    Result := FuncnameList.IndexOf(varname);
+  Result := FuncnameList.IndexOf(varname);
   if Result = -1 then
   begin
     Result := VarnameList.IndexOf(varname);
@@ -115,8 +95,6 @@ end;
 function TPropTable.FindAddr(varname: string): integer;
 begin
   Result := TempVarnameList.IndexOf(varname);
-  if Result = -1 then
-    Result := FuncParamnameList.IndexOf(varname);
   if Result = -1 then
   begin
     Result := VarnameList.IndexOf(varname);
@@ -152,8 +130,6 @@ begin
   FuncnameList.Add('999888t');
   StrList := TStringList.Create;
   StrList.Add('999888t');
-  FuncParamnameList := TStringList.Create;
-  FuncParamnameList.Add('999888t');
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
