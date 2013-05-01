@@ -50,8 +50,6 @@ begin
 end;
 
 procedure TExec.Exec;
-var
-  I: Integer;
 begin
   try
   CoreExec
@@ -101,7 +99,7 @@ var
           Value._String := StringList[Value._Int];
           Inc(P, SizeOf(Integer));
         end;
-      iident, pfuncaddr:
+      iident:
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
@@ -117,8 +115,24 @@ var
             Value._String := '_T' + IntToStr(-i);
           end;
 //          Value._Int := I;
-          if Value._Type = inone then
-            Value._Type := T;
+//          if Value._Type = inone then
+//            Value._Type := T;
+        end;
+      pfuncaddr:
+        begin
+          I := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          if i > 0 then
+          begin
+            Value := @globlevar[i];
+            Value._String := FPropTable.varproptable[i];
+          end
+          else
+          begin
+            Value := @tempvar[EBP -i];
+            Value._String := '_T' + IntToStr(-i);
+          end;
+          Value._Type := pfuncaddr;
         end;
     end;
   end;
@@ -156,11 +170,13 @@ begin
           GetValue(CodeBuf, _p1);
           Inc(FESP);
           FStack[FESP] := _p1^;
+          _P1^._Type := inone;
         end;
       ipop:
         begin
           GetValue(CodeBuf, _p1);
           _p1^ :=FStack[FESP];
+          FStack[FESP]._Type := inone;
           Dec(FESP);
         end;
       iret:
@@ -194,7 +210,7 @@ begin
               RunError('function: ' + _p1._String + ' is not def');
             end;
           end;
-          IP := I;
+          IP := m_FuncProp.EntryAddr;
           Continue;
         end;
       iread:
