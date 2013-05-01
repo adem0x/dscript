@@ -35,9 +35,9 @@ begin
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c @';
 //   Source := 'x = ''100''; y=x + 10; write y @';
 //  Source := 'function add2(c, d) begin return add(c,d) end;' +
-    Source := 'add = function(a,b) begin  return a + b end;' +
+    Source := 'add = function(a,b) begin  var c= a + b; return c end;' +
     'function add2(a,b) begin d= add(a, b) * 2; return d end;'+
-    'f = add(add(1,2), 10); write f';
+    'f = add(add(1,2), 3); write f';
 //    Source := 'mywrite(100)';
 //  Source := 'write 4 % 2 @' ;
 //   Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
