@@ -1,19 +1,23 @@
 unit uobjmgr;
 
 interface
+
 uses
   uconst, Classes, IniFiles;
+
 type
   TObjMgr = class;
+
   TObj = class
     Name: Integer;
-    FValues:TList;
+    FValues: TList;
   public
-    constructor Create(AObjMgr:TObjMgr);
+    constructor Create(AObjMgr: TObjMgr);
     function FindAValue(AName: Integer): PValue;
     function AddAValue(AValue: TValue): Integer;
     function DelAValue(AName: Integer): PValue;
   end;
+
   TObjMgr = class
   private
     FObjList: TList;
@@ -24,22 +28,23 @@ type
     function DeleteAObject(AIndex: Integer): Integer; overload;
     function AddAObject(AObj: TObj): Integer;
   end;
+
 var
   proplist: TStringList;
-
 
 implementation
 
 { TObj }
 
-function TObj.AddAValue( AValue: TValue): Integer;
+function TObj.AddAValue(AValue: TValue): Integer;
 var
   v: PValue;
 begin
   New(v);
-  v^:= AValue;
+  v^ := AValue;
   Result := FValues.Add(v)
 end;
+
 constructor TObj.Create(AObjMgr: TObjMgr);
 begin
   if Assigned(AObjMgr) then
@@ -51,9 +56,9 @@ function TObj.DelAValue(AName: Integer): PValue;
 var
   v: PValue;
 begin
-  v:= FValues[AName];
+  v := FValues[AName];
   Dispose(v);
-  v:= nil;
+  v := nil;
 end;
 
 function TObj.FindAValue(AName: Integer): PValue;
@@ -95,8 +100,11 @@ begin
 end;
 
 initialization
-  proplist := TStringList.Create;
+
+proplist := TStringList.Create;
+
 finalization
-  proplist.Free;
+
+proplist.Free;
 
 end.

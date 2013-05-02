@@ -1,6 +1,7 @@
 unit ulex;
 
 interface
+
 uses
   SysUtils;
 
@@ -36,15 +37,15 @@ uses
   )
   %
   {
-  }
-//}
+}
+// }
 type
   Token = (tknone, tkhalt, tkread, tkwrite, tkif, tkthen, tkelse, tkwhile, tkdo,
     tkend, tkop, tkident, tkaddop, tksubop, tkmulop, tkdivop, tkintnum,
     tkfloatnum, tknum, tkaend, tkdot, tkequal, tkbigop, tksmallop, tkbigequalop,
     tksmallequalop, tkunequal, tkleftpart, tkrightpart, tksemicolon, tkstring,
-    tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue, tkmodop,
-    tkleftbrace, tkrightbrace, tknew, tkfor);
+    tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue,
+    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor);
 
 var
   KeyWord: array [0 .. 16] of string = (
@@ -106,7 +107,7 @@ implementation
 
 procedure TLex.LexError(s: string);
 begin
-  raise Exception.Create('LexError: '+ s + ' On Line:' + IntToStr(SrcLineNo));
+  raise Exception.Create('LexError: ' + s + ' On Line:' + IntToStr(SrcLineNo));
 end;
 
 function TLex.GetNextToken(AMactch: boolean): Token;
@@ -131,7 +132,7 @@ begin
     Result := tkhalt;
     Exit;
   end;
-  while True  do
+  while True do
   begin
     case FSource^ of
       '0' .. '9':
@@ -143,9 +144,9 @@ begin
           StateToken := tkident;
         end;
       #0:
-      begin
-        StateToken := tkaend;
-      end;
+        begin
+          StateToken := tkaend;
+        end;
       ' ':
         StateToken := tkaend;
       #10:
@@ -153,7 +154,7 @@ begin
           StateToken := tkaend;
           Inc(SrcLineNo);
         end;
-      #13,#9:
+      #13, #9:
         begin
           Inc(FSource);
           Continue;
@@ -190,8 +191,8 @@ begin
         StateToken := tkleftbrace;
       '}':
         StateToken := tkrightbrace;
-      else
-        LexError('unknow word'+ FSource^);
+    else
+      LexError('unknow word' + FSource^);
     end;
     if StateToken in [tkequal, tkaddop, tksubop, tkmulop, tkdivop, tkbigop,
       tksmallop, tkleftpart, tkrightpart, tksemicolon, tkcomma, tkmodop, tkdot,
@@ -329,15 +330,15 @@ begin
   else
   begin
     Result := False;
-//{$IFDEF lex}
+    // {$IFDEF lex}
     LexError('Match Error:' + CurrentToken);
-//{$ENDIF}
+    // {$ENDIF}
   end;
 end;
 
 procedure TLex.SetSource(const Value: PAnsiChar);
 begin
-  FSource := Value ;
+  FSource := Value;
   FSourceLen := FSource + Length(FSource);
 end;
 

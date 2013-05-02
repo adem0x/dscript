@@ -7,6 +7,7 @@ uses
 
 type
   TFunction = procedure;
+
   TExec = class
   private
     globlevar: array [0 .. 1024 * 1024] of TValue;
@@ -36,7 +37,7 @@ type
     property IPEnd: Integer read FIPEnd write FIPEnd;
     function RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
     property Stack[Index: Integer]: PValue read GetStack write SetStack;
-    property ESP:Integer read FESP;
+    property ESP: Integer read FESP;
   end;
 
 implementation
@@ -46,16 +47,16 @@ uses
 
 procedure TExec.RunError(S: string);
 begin
-  raise Exception.Create('RunTimeError: ' + S + 'On Line: '+ IntToStr(IP));
+  raise Exception.Create('RunTimeError: ' + S + 'On Line: ' + IntToStr(IP));
 end;
 
 procedure TExec.Exec;
 begin
   try
-  CoreExec
+    CoreExec
   except
-   on E: Exception do
-    Writeln(E.Message);
+    on E: Exception do
+      Writeln(E.Message);
   end;
 end;
 
@@ -83,7 +84,7 @@ var
   VarI: Integer;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
-    i: Integer;
+    I: Integer;
     T: _TEmitInts;
   begin
     Value._Type := _PEmitInts(P)^;
@@ -104,14 +105,14 @@ var
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
-          if i > 0 then
+          if I > 0 then
           begin
-            Value := @globlevar[i];
+            Value := @globlevar[I];
             Value._String := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
-            Value := @tempvar[EBP -i];
+            Value := @tempvar[EBP - I];
             Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
         end;
@@ -119,14 +120,14 @@ var
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
-          if i > 0 then
+          if I > 0 then
           begin
-            Value := @globlevar[i];
+            Value := @globlevar[I];
             Value._String := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
-            Value := @tempvar[EBP -i];
+            Value := @tempvar[EBP - I];
             Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
           Value._Type := pfuncaddr;
@@ -169,12 +170,12 @@ begin
           GetValue(CodeBuf, _p1);
           Inc(FESP);
           FStack[FESP] := _p1^;
-          _P1^._Type := inone;
+          _p1^._Type := inone;
         end;
       ipop:
         begin
           GetValue(CodeBuf, _p1);
-          _p1^ :=FStack[FESP];
+          _p1^ := FStack[FESP];
           FStack[FESP]._Type := inone;
           Dec(FESP);
         end;
@@ -183,7 +184,7 @@ begin
           IP := CallStack[CallESP];
           Dec(CallESP);
 
-          VarI := VarX[VarXSp];
+          VarI := VarX[VarXSP];
           Dec(VarXSP);
           Continue;
         end;
@@ -201,12 +202,13 @@ begin
           if m_FuncProp.EntryAddr = -1 then
           begin
             I := FFunctionList.IndexOf(m_FuncProp.FuncName);
-            if I <> - 1 then
+            if I <> -1 then
             begin
               TFunction(FFunctionList.Objects[I])();
               Inc(FIP);
               Continue;
-            end else
+            end
+            else
             begin
               _p1._String := m_FuncProp.FuncName;
               RunError('function: "' + _p1._String + '" is not def');
@@ -214,7 +216,7 @@ begin
           end;
           IP := m_FuncProp.EntryAddr;
           Inc(VarXSP);
-          VarX[VarXSp] := VarI;
+          VarX[VarXSP] := VarI;
           VarI := _p1._Int;
           Continue;
         end;
@@ -253,8 +255,8 @@ begin
             pfuncaddr:
               begin
                 _p2._Type := pfuncaddr;
-                FPropTable.funcproptable[_p2._Int] :=
-                FPropTable.funcproptable[_p1._Int];
+                FPropTable.funcproptable[_p2._Int] := FPropTable.funcproptable
+                  [_p1._Int];
               end;
             pint:
               begin
@@ -297,10 +299,10 @@ begin
                 if _p2._Type = pint then
                   Int2Str(_p2);
                 _p3._Type := pstring;
-                S := StringList.Strings[_p1._Int] +
-                StringList.Strings[_p2._Int];
+                S := StringList.Strings[_p1._Int] + StringList.Strings
+                  [_p2._Int];
                 I := StringList.IndexOf(S);
-                if I = -1  then
+                if I = -1 then
                   I := StringList.Add(S);
                 _p3._Int := I;
               end;

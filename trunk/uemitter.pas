@@ -16,13 +16,13 @@ type
     m: TMemoryStream;
 
     function EmitNop(): integer;
-    function DeleteCode(ALine :Integer): Boolean;
+    function DeleteCode(ALine: integer): Boolean;
     procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1: TEmitInts);
     procedure EmitCode(atoken: _TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1, _p2: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
-      LineNo: integer = -1; IsFunc: boolean = False); overload;
+      LineNo: integer = -1; IsFunc: Boolean = False); overload;
     function Ints2str(aInts: _TEmitInts): string;
     function str2Ints(aInts: string): _TEmitInts;
     procedure ToExec;
@@ -73,11 +73,11 @@ begin
   FExec.IPEnd := FExec.Code.Count;
   EmitFunCoder.Clear;
   EmitCoder.Clear;
-//  FPropTable.StrList.Clear;
-//  FPropTable.VarnameList.Clear;
-//  FPropTable.TempVarnameList.Clear;
-//  FPropTable.FuncnameList.Clear;
-//  FPropTable.FuncParamnameList.Clear;
+  // FPropTable.StrList.Clear;
+  // FPropTable.VarnameList.Clear;
+  // FPropTable.TempVarnameList.Clear;
+  // FPropTable.FuncnameList.Clear;
+  // FPropTable.FuncParamnameList.Clear;
 end;
 
 function TEmitter.EmitNop(): integer;
@@ -90,15 +90,15 @@ begin
   if not FPropTable.EmitFunc then
   begin
     EmitCode(inop);
-//    EmitCoder.Add(nil);
+    // EmitCoder.Add(nil);
   end
   else
   begin
     EmitCode(inop);
-//    EmitFunCoder.Add(nil);
+    // EmitFunCoder.Add(nil);
   end;
 
-//  Inc(CodeLine);
+  // Inc(CodeLine);
 end;
 
 procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
@@ -113,7 +113,8 @@ begin
     P := EmitCoder[ALine];
     FreeMem(P);
     EmitCoder.Delete(ALine);
-  end else
+  end
+  else
   begin
     P := EmitFunCoder[ALine];
     FreeMem(P);
@@ -130,7 +131,7 @@ begin
   m := TMemoryStream.Create;
 end;
 
-function TEmitter.DeleteCode(ALine: Integer): Boolean;
+function TEmitter.DeleteCode(ALine: integer): Boolean;
 begin
   Result := True;
   if not FPropTable.EmitFunc then
@@ -153,7 +154,7 @@ begin
 end;
 
 procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
-  LineNo: integer; IsFunc: boolean);
+  LineNo: integer; IsFunc: Boolean);
 
   procedure emitparam(var _p: TEmitInts);
   var
@@ -184,7 +185,7 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write('''',_p.sInstr, ''' '); {$ENDIF}
+{$IFDEF emit} Write('''', _p.sInstr, ''' '); {$ENDIF}
           end;
         iident:
           begin
@@ -193,17 +194,17 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         pfuncaddr:
-        begin
+          begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
-        end;
+          end;
         pobject:
-        begin
+          begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
-        end
+          end
       else
         Write('emitparam error')
         // pfunc:
