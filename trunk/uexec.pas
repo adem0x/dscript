@@ -3,7 +3,7 @@ unit uexec;
 interface
 
 uses
-  uconst, SysUtils, Classes, ucorefunc, uproptable;
+  uconst, SysUtils, Classes, ucorefunc, uproptable, uobjmgr;
 
 type
   TFunction = procedure;
@@ -22,6 +22,7 @@ type
     FPropTable: TPropTable;
     FIP, FIPEnd: Integer;
     FFunctionList: TStringList;
+    FObjMgr: TObjMgr;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -162,6 +163,18 @@ begin
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
+      igetobjv:
+      begin
+
+      end;
+      iputobjv:
+      begin
+
+      end;
+      inewobj:
+      begin
+
+      end;
       inop:
         begin
         end;

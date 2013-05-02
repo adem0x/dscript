@@ -8,7 +8,7 @@ type
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject, pfuncaddr,
     iebp, inop, imod,
-    iputobjv, igetobjv, inewobj,idelobj,
+    iputobjv, igetobjv, inewob,
     itheend);
   PEmitInts = ^TEmitInts;
 
@@ -67,7 +67,6 @@ var
     'putobjv',
     'getobjv',
     'newobj',
-    'delobj',
     'theend'
   );
 
