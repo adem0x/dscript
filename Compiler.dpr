@@ -39,9 +39,9 @@ begin
   // Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c @';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c @';
   // Source := 'x = ''100''; y=x + 10; write y @';
-  // Source := 'function add2(c, d) begin return add(c,d) end;' +
-  // Source := 'add = function(a,b) begin  var c= a + b; return c end;' +
-  // 'function add2(a,b) begin d= add(a, b) * 2; return d end;'+
+  // Source := 'function add2(c, d) return add(c,d) end;' +
+  // Source := 'add = function(a,b)  var c= a + b; return c end;' +
+  // 'function add2(a,b) d= add(a, b) * 2; return d end;'+
   // 'f = add(add(1,2), 3); write f';
   // Source := 'mywrite(100)';
   // Source := 'write 4 % 2 @' ;
