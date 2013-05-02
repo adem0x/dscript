@@ -6,19 +6,23 @@ uses
 type
   TObjMgr = class;
   TObj = class
-    Name: string;
-    FValues:THashedStringList;
+    Name: Integer;
+    FValues:TList;
   public
     constructor Create(AObjMgr:TObjMgr);
-    function FindAValue(AName: string): PValue;
-    procedure AddAValue(AName: string; AValue: TValue);
-    function DelAValue(AName: string): PValue;
+    function FindAValue(AName: Integer): PValue;
+    function AddAValue(AValue: TValue): Integer;
+    function DelAValue(AName: Integer): PValue;
   end;
   TObjMgr = class
+  private
+    FObjList: TList;
   public
+    constructor Create;
+    destructor Destroy; override;
     function DeleteAObject(AObj: TObj): Integer; overload;
     function DeleteAObject(AIndex: Integer): Integer; overload;
-    procedure AddAObject(AObj: TObj);
+    function AddAObject(AObj: TObj): Integer;
   end;
 var
   proplist: TStringList;
@@ -28,58 +32,66 @@ implementation
 
 { TObj }
 
-procedure TObj.AddAValue(AName: string; AValue: TValue);
+function TObj.AddAValue( AValue: TValue): Integer;
 var
-  I: Integer;
+  v: PValue;
 begin
-  I := FValues.IndexOf(AName);
+  New(v);
+  v^:= AValue;
+  Result := FValues.Add(v)
 end;
 constructor TObj.Create(AObjMgr: TObjMgr);
 begin
   if Assigned(AObjMgr) then
     AObjMgr.AddAObject(Self);
-  FValues := THashedStringList.Create;
+  FValues := TList.Create;
 end;
 
-function TObj.DelAValue(AName: string): PValue;
+function TObj.DelAValue(AName: Integer): PValue;
 var
-  I: Integer;
+  v: PValue;
 begin
-  I := FValues.IndexOf(AName);
-  if I = -1 then
-    Result := nil
-  else
-  begin
-    FValues.Delete(I);
-  end;
+  v:= FValues[AName];
+  Dispose(v);
+  v:= nil;
 end;
 
-function TObj.FindAValue(AName: string): PValue;
-var
-  I: Integer;
+function TObj.FindAValue(AName: Integer): PValue;
 begin
-  I := FValues.IndexOf(AName);
-  if I = -1 then
-    Result := nil
-  else
-    Result := PValue(FValues.Objects[I])
+  Result := FValues[AName];
 end;
 
 { TObjMgr }
-
-procedure TObjMgr.AddAObject(AObj: TObj);
-begin
-
-end;
-
 function TObjMgr.DeleteAObject(AObj: TObj): Integer;
 begin
 
 end;
 
+function TObjMgr.AddAObject(AObj: TObj): Integer;
+begin
+
+end;
+
+constructor TObjMgr.Create;
+begin
+  FObjList := TList.Create;
+end;
+
 function TObjMgr.DeleteAObject(AIndex: Integer): Integer;
 begin
 
+end;
+
+destructor TObjMgr.Destroy;
+var
+  I: Integer;
+begin
+  for I := 0 to FObjList.Count - 1 do
+  begin
+    TObject(FObjList[I]).Free;
+  end;
+  FObjList.Free;
+  inherited;
 end;
 
 initialization
