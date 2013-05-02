@@ -25,7 +25,11 @@ var
   v: PValue;
 begin
   v := gExec.Stack[gExec.ESP];
+  if v._Type = pint then
   Writeln(v._int)
+  else
+  if v._Type = pstring then
+  Writeln(v._String)
 end;
 
 begin
@@ -46,8 +50,8 @@ begin
   // Source := 'mywrite(100)';
   // Source := 'write 4 % 2 @' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
-  // Source := 'f = {i = 10; next = f};';
-  Source := ' j = 1; for i = j, 10, 2 do write i end; write ''end''';
+   Source := 'f = {i = 10; next = f}; write f.i; ';
+//  Source := 'for i = 1, 10 do write i; f = {i = 10; next = f}; end;' ;
   // Source := 'write ''end''';
   try
     gPropTable := TPropTable.Create;

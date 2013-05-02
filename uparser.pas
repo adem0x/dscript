@@ -56,33 +56,33 @@ type
     procedure ParserError(s: string);
     function Stmt_sequence: TEmitInts;
     function statement: TEmitInts;
-    function stmt_if: TEmitInts;
-    function stmt_while: TEmitInts;
-    function stmt_break: TEmitInts;
-    function stmt_continue: TEmitInts;
-    function stmt_assign: TEmitInts;
-    function stmt_read: TEmitInts;
-    function stmt_write: TEmitInts;
-    function stmt_func: TEmitInts;
-    function stmt_object: TEmitInts;
-    function stmt_for: TEmitInts;
-    function sExp: TEmitInts;
-    function logicexp: TEmitInts;
-    function asop: TEmitInts;
-    function mdop: TEmitInts;
-    function term: TEmitInts;
-    function factor: TEmitInts;
-    function logicop: TEmitInts;
+    function stmt_if(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_while(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_break(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_continue(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_assign(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_read(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_write(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_func(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_object(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_for(AInts: PEmitInts = nil): TEmitInts;
+    function sExp(AInts: PEmitInts = nil): TEmitInts;
+    function logicexp(AInts: PEmitInts = nil): TEmitInts;
+    function asop(AInts: PEmitInts = nil): TEmitInts;
+    function mdop(AInts: PEmitInts = nil): TEmitInts;
+    function term(AInts: PEmitInts = nil): TEmitInts;
+    function factor(AInts: PEmitInts = nil): TEmitInts;
+    function logicop(AInts: PEmitInts = nil): TEmitInts;
     function num: string;
     function sident(): string; overload;
     function sident(aIdent: string): Integer; overload;
     function sgetstring: string; overload;
     function sgetstring(s: string): Integer; overload;
     function idents(): string;
-    function stmt_var: TEmitInts;
-    function stmt_return: TEmitInts;
+    function stmt_var(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_return(AInts: PEmitInts = nil): TEmitInts;
     function reversedop(AEmitInts: _TEmitInts): _TEmitInts;
-    function stmt_callfunc: TEmitInts;
+    function stmt_callfunc(AInts: PEmitInts = nil): TEmitInts;
     procedure ToEmitter;
     property Opt: Boolean read FOpt write FOpt;
   end;
@@ -171,11 +171,11 @@ begin
     tkhalt:
       ;
   else
-    ParserError('not clear' + GetToken);
+//    ParserError('not clear' + GetToken);
   end;
 end;
 
-function TParser.stmt_if: TEmitInts;
+function TParser.stmt_if(AInts: PEmitInts): TEmitInts;
 var
   gtoken: TEmitInts;
   _p1: TEmitInts;
@@ -211,7 +211,7 @@ begin
     ParserError('not ''end'' but ' + GetToken + ' find');
 end;
 
-function TParser.stmt_object: TEmitInts;
+function TParser.stmt_object(AInts: PEmitInts): TEmitInts;
 var
   m_objaddr, m_lastobjid: Integer;
   _p1, _p2, _p3: TEmitInts;
@@ -221,7 +221,8 @@ begin
   Match(tkleftbrace);
   Inc(FObjectId);
   FPropTable.EmitObject := True;
-  m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
+//  m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
+  m_objaddr := FPropTable.GetObjectAddr(AInts.sInstr);
   m_lastobjid := FPropTable.ObjectId;
   FPropTable.ObjectId := m_objaddr;
   Result.Ints := pobject;
@@ -251,7 +252,7 @@ begin
           _p2 := sExp;
           _p3.Ints := pint;
           _p3.iInstr := m_objaddr;
-          FEmitter.EmitCode(iputobjv, _p2, _p3);
+          FEmitter.EmitCode(iputobjv, _p3, _p1, _p2);
         end;
       end;
     end;
@@ -263,7 +264,7 @@ begin
   Dec(Stack);
 end;
 
-function TParser.stmt_while: TEmitInts;
+function TParser.stmt_while(AInts: PEmitInts): TEmitInts;
 var
   gtoken: TEmitInts;
   _p1: TEmitInts;
@@ -310,7 +311,7 @@ begin
   FBreakList := lastbreaklist;
 end;
 
-function TParser.stmt_assign: TEmitInts;
+function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
   _p2, _p3: TEmitInts;
 begin
@@ -330,7 +331,7 @@ begin
     tkequal:
       begin
         Match(tkequal);
-        _p2 := sExp;
+        _p2 := sExp(@result);
         if _p2.Ints = pobject then
         begin
           FEmitter.EmitCode(imov, _p2, Result);
@@ -364,12 +365,12 @@ begin
     tksemicolon:
       Match(tksemicolon);
   else
-    ParserError('unknown assign word' + GetToken);
+    ParserError('unknown assign word: ' + GetToken);
   end;
   Dec(Stack);
 end;
 
-function TParser.stmt_break: TEmitInts;
+function TParser.stmt_break(AInts: PEmitInts): TEmitInts;
 begin
   if not FInWhileStmt then
     ParserError('not in parse while');
@@ -377,13 +378,13 @@ begin
   FBreakList.Add(Pointer(FEmitter.emitnop))
 end;
 
-function TParser.sExp: TEmitInts; // 一般表达式
+function TParser.sExp(AInts: PEmitInts): TEmitInts; // 一般表达式
 var
   gtoken: TEmitInts;
   _p1, _p2, _p3: TEmitInts;
 begin
   Inc(Stack);
-  Result := term;
+  Result := term(AInts);
   while True do
     case GetNextToken() of
       tksubop, tkaddop:
@@ -415,7 +416,7 @@ begin
   Dec(Stack);
 end;
 
-function TParser.logicexp: TEmitInts;
+function TParser.logicexp(AInts: PEmitInts): TEmitInts;
 var
   _p1, _p2: TEmitInts;
 begin
@@ -433,7 +434,7 @@ begin
   end;
 end;
 
-function TParser.logicop: TEmitInts;
+function TParser.logicop(AInts: PEmitInts): TEmitInts;
 begin
   CurrentToken := GetNextToken(False);
   case CurrentToken of
@@ -481,7 +482,7 @@ begin
   Result := FLex.Match(AToken)
 end;
 
-function TParser.asop: TEmitInts;
+function TParser.asop(AInts: PEmitInts): TEmitInts;
 begin
   case GetNextToken of
     tksubop:
@@ -499,7 +500,7 @@ begin
   end;
 end;
 
-function TParser.mdop: TEmitInts;
+function TParser.mdop(AInts: PEmitInts): TEmitInts;
 begin
   case GetNextToken of
     tkmulop:
@@ -523,15 +524,28 @@ begin
   end;
 end;
 
-function TParser.term: TEmitInts;
+function TParser.term(AInts: PEmitInts): TEmitInts;
 var
   gtoken: TEmitInts;
   _p1, _p2, _p3: TEmitInts;
 begin
   Inc(Stack);
-  Result := factor;
+  Result := factor(AInts);
   while True do
     case GetNextToken() of
+      tkdot:
+      begin
+        Match(tkdot);
+        Match(tkident);
+        _p1.Ints := pint;
+        _p1.iInstr :=  FPropTable.FindObjectAddr(Result.sInstr);
+        if _p1.iInstr = -1  then ParserError(' '''+_p1.sInstr + ''' is not a object');
+        _p1.sInstr := GetToken();
+        _p2.Ints := pint;
+        _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p1.sInstr);
+        if _p2.iInstr = -1 then ParserError('Object '''+_p1.sInstr + ''' do not have a property '+ _p2.sInstr);
+        FEmitter.EmitCode(igetobjv, _p1, _p2, Result);
+      end;
       tkmulop, tkdivop, tkmodop:
         begin
           gtoken := mdop;
@@ -580,7 +594,7 @@ begin
         end;
       tkleftbrace:
         begin
-          Result := stmt_object;
+          Result := stmt_object(AInts);
         end;
     else
       Break;
@@ -593,7 +607,7 @@ begin
   FEmitter.ToExec;
 end;
 
-function TParser.factor: TEmitInts;
+function TParser.factor(AInts: PEmitInts): TEmitInts;
 begin
   Inc(Stack);
   CurrentToken := GetNextToken();
@@ -615,9 +629,6 @@ begin
         Result.Ints := iident;
         Result.sInstr := sident;
         Result.iInstr := sident(Result.sInstr);
-        // if Result.iInstr > 0 then
-        // if FPropTable.vartypeproptable[Result.iInstr] <> inone then
-        // Result.Ints := FPropTable.vartypeproptable[Result.iInstr]
       end;
     tkleftpart:
       begin
@@ -659,7 +670,7 @@ begin
   Result := FPropTable.getstraddr(s);
 end;
 
-function TParser.stmt_read: TEmitInts;
+function TParser.stmt_read(AInts: PEmitInts): TEmitInts;
 var
   _p1: TEmitInts;
 begin
@@ -671,7 +682,7 @@ begin
   FEmitter.EmitCode(iread, _p1);
 end;
 
-function TParser.stmt_write: TEmitInts;
+function TParser.stmt_write(AInts: PEmitInts): TEmitInts;
 var
   _p1: TEmitInts;
 begin
@@ -682,7 +693,7 @@ begin
   Dec(Stack);
 end;
 
-function TParser.stmt_for: TEmitInts;
+function TParser.stmt_for(AInts: PEmitInts): TEmitInts;
 var
   _p1, _p2, _p3, _p4, _p5: TEmitInts;
   LineNo: Integer;
@@ -721,7 +732,7 @@ begin
   Match(tkend);
 end;
 
-function TParser.stmt_func: TEmitInts;
+function TParser.stmt_func(AInts: PEmitInts): TEmitInts;
 var
   CurrentCodeLine, I: Integer;
   _p1: TEmitInts;
@@ -812,7 +823,7 @@ begin
   Dec(Stack);
 end;
 
-function TParser.stmt_callfunc: TEmitInts;
+function TParser.stmt_callfunc(AInts: PEmitInts): TEmitInts;
 var
   PushList: array [0 .. 100] of TEmitInts;
   PushI, I: Integer;
@@ -876,7 +887,7 @@ begin
   Dec(Stack);
 end;
 
-function TParser.stmt_continue: TEmitInts;
+function TParser.stmt_continue(AInts: PEmitInts): TEmitInts;
 begin
   if not FInWhileStmt then
     ParserError('not in parse while');
@@ -895,7 +906,7 @@ begin
   end;
 end;
 
-function TParser.stmt_var: TEmitInts;
+function TParser.stmt_var(AInts: PEmitInts): TEmitInts;
 begin
   if not FPropTable.EmitFunc then
     ParserError('var must be def in function');
@@ -905,7 +916,7 @@ begin
   TempVar := False;
 end;
 
-function TParser.stmt_return: TEmitInts;
+function TParser.stmt_return(AInts: PEmitInts): TEmitInts;
 begin
   if not FPropTable.EmitFunc then
     ParserError('return must be def in function');
