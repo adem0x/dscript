@@ -234,7 +234,8 @@ begin
     case CurrentToken of
       tkrightbrace:
         Break;
-      tksemicolon: Match(tksemicolon);
+      tksemicolon:
+        Match(tksemicolon);
     else
       _p1.Ints := iident;
       _p1.sInstr := idents;
@@ -333,7 +334,8 @@ begin
         if _p2.Ints = pobject then
         begin
           FEmitter.EmitCode(imov, _p2, Result);
-        end else if _p2.Ints = pfunc then
+        end
+        else if _p2.Ints = pfunc then
         begin
           _p3.Ints := iident;
           _p3.sInstr := '1tempvar' + IntToStr(Stack);
@@ -359,7 +361,8 @@ begin
         Result.sInstr := IntToStr(Result.iInstr);
         FEmitter.EmitCode(icall, Result);
       end;
-    tksemicolon: Match(tksemicolon);
+    tksemicolon:
+      Match(tksemicolon);
   else
     ParserError('unknown assign word' + GetToken);
   end;
@@ -686,8 +689,8 @@ var
 begin
   Match(tkfor);
   _p1.Ints := iident;
-  _p1.sInstr:= sident;
-  _p1.iInstr := - FPropTable.GetTempVarAddr(_p1.sInstr);
+  _p1.sInstr := sident;
+  _p1.iInstr := -FPropTable.gettempvaraddr(_p1.sInstr);
   Match(tkequal);
   _p2 := sExp;
   Match(tkcomma);
@@ -704,17 +707,17 @@ begin
   end;
   FEmitter.EmitCode(imov, _p2, _p1);
   FEmitter.EmitCode(icmp, _p1, _p3);
-  LineNo := FEmitter.EmitNop;
+  LineNo := FEmitter.emitnop;
   Match(tkdo);
   while GetNextToken() <> tkend do
     Stmt_sequence;
   FEmitter.EmitCode(iadd, _p1, _p4, _p1);
   _p5.Ints := pint;
-  _p5.iInstr := -(FEmitter.CodeLine - LineNo + 1);
+  _p5.iInstr := -(FEmitter.codeline - LineNo + 1);
   FEmitter.EmitCode(ijmp, _p5);
   _p5.Ints := pint;
-  _p5.iInstr := FEmitter.CodeLine - LineNo;
-  FEmitter.ModifiyCode(LineNo, ijbe, _p5);
+  _p5.iInstr := FEmitter.codeline - LineNo;
+  FEmitter.modifiycode(LineNo, ijbe, _p5);
   Match(tkend);
 end;
 

@@ -1,31 +1,35 @@
 unit uproptable;
 
 interface
+
 uses
   uconst, Classes;
+
 type
   PFuncProp = ^TFuncProp;
+
   TFuncProp = record
     FuncName: string;
     EntryAddr: Integer;
   end;
+
 type
   TPropTable = class
   private
     FFuncPropCount: Integer;
     FFuncPropTable: array of TFuncProp;
-    FFuncVarPropTable: array of array of string;//0维是全局
+    FFuncVarPropTable: array of array of string; // 0维是全局
     FObjectValuePropTable: array of array of string;
     FObjectPropTable: array of string;
     function GetFuncPropTable(Index: Integer): PFuncProp;
     procedure SetFuncPropTable(Index: Integer; const Value: PFuncProp);
 
-    procedure SetFuncVarPropTable(X,Y: Integer; const Value: string);
+    procedure SetFuncVarPropTable(X, Y: Integer; const Value: string);
     procedure SetObjectPropTable(X: Integer; const Value: string);
-    procedure SetObjectValuePropTable(X,Y: Integer; const Value: string);
+    procedure SetObjectValuePropTable(X, Y: Integer; const Value: string);
   public
-    StrList, VarnameList, TempVarnameList, FuncNameList, FObjectList, FValueList
-    : TStringList;
+    StrList, VarnameList, TempVarnameList, FuncNameList, FObjectList,
+      FValueList: TStringList;
     EmitFunc: Boolean;
     FuncName: string;
     EmitObject: Boolean;
@@ -34,25 +38,27 @@ type
     constructor Create;
     function GetObjectAddr(AObjectName: string): Integer;
     function GetValueAddr(AValeName: string): Integer;
-    function FindAddr(varname: string): integer;
-    function GetFuncAddr(varname: string; entryaddr: Integer): Integer; overload;
+    function FindAddr(varname: string): Integer;
+    function GetFuncAddr(varname: string; EntryAddr: Integer): Integer;
+      overload;
     function GetFuncAddr(varname: string): Integer; overload;
-    function GetStackAddr(varname: string): integer;
-    function GetStrAddr(strname: string): integer;
-    function GetTempVarAddr(varname: string): integer;
+    function GetStackAddr(varname: string): Integer;
+    function GetStrAddr(strname: string): Integer;
+    function GetTempVarAddr(varname: string): Integer;
     procedure ClearTempVar;
     procedure ClearObject;
     procedure ClearValue;
     function GetFuncVarPropTable(X, Y: Integer): string;
-     function GetObjectValuePropTable(X, Y: Integer): string;
+    function GetObjectValuePropTable(X, Y: Integer): string;
     function GetObjectPropTable(X: Integer): string;
     function FindAPropFromObjectTable(AObject: Integer): string;
-    property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable write SetFuncPropTable;
+    property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable
+      write SetFuncPropTable;
   end;
 
 implementation
 
-function TPropTable.GetStrAddr(strname: string): integer;
+function TPropTable.GetStrAddr(strname: string): Integer;
 begin
   Result := StrList.IndexOf(strname);
   if Result = -1 then
@@ -62,7 +68,7 @@ begin
   end;
 end;
 
-function TPropTable.GetFuncAddr(varname: string;entryaddr: Integer): integer;
+function TPropTable.GetFuncAddr(varname: string; EntryAddr: Integer): Integer;
 var
   pm_FuncProp: PFuncProp;
   m_FuncProp: TFuncProp;
@@ -79,28 +85,28 @@ begin
     Result := FuncNameList.IndexOf(varname);
   end;
   pm_FuncProp := FuncPropTable[Result];
-  if(not Assigned(pm_FuncProp)) or (entryaddr >= 0) then
+  if (not Assigned(pm_FuncProp)) or (EntryAddr >= 0) then
   begin
     m_FuncProp.FuncName := varname;
-    m_FuncProp.EntryAddr := entryaddr;
+    m_FuncProp.EntryAddr := EntryAddr;
     FuncPropTable[Result] := @m_FuncProp;
   end;
 end;
-
 
 function TPropTable.GetFuncAddr(varname: string): Integer;
 begin
   Result := GetFuncAddr(varname, -1);
 end;
 
-function TPropTable.GetStackAddr(varname: string): integer;
+function TPropTable.GetStackAddr(varname: string): Integer;
 begin
   if EmitObject then
   begin
     Result := GetValueAddr(varname);
-  end else
+  end
+  else
   begin
-    Result := FuncnameList.IndexOf(varname);
+    Result := FuncNameList.IndexOf(varname);
     if Result = -1 then
       Result := TempVarnameList.IndexOf(varname);
     if Result = -1 then
@@ -118,7 +124,7 @@ begin
   end;
 end;
 
-function TPropTable.FindAddr(varname: string): integer;
+function TPropTable.FindAddr(varname: string): Integer;
 begin
   Result := TempVarnameList.IndexOf(varname);
   if Result = -1 then
@@ -136,7 +142,7 @@ begin
 
 end;
 
-function TPropTable.GetTempVarAddr(varname: string): integer;
+function TPropTable.GetTempVarAddr(varname: string): Integer;
 var
   Y: Integer;
 begin
@@ -146,10 +152,12 @@ begin
     TempVarnameList.Add(varname);
     Result := TempVarnameList.IndexOf(varname);
     Y := FuncNameList.IndexOf(FuncName);
-    if Y = -1 then Y:= 0;
+    if Y = -1 then
+      Y := 0;
     SetFuncVarPropTable(Y, Result, varname);
   end;
 end;
+
 function TPropTable.GetValueAddr(AValeName: string): Integer;
 begin
   Result := FValueList.IndexOf(AValeName);
@@ -184,8 +192,8 @@ begin
   VarnameList.Add('999888t');
   TempVarnameList := TStringList.Create;
   TempVarnameList.Add('999888t');
-  FuncnameList := TStringList.Create;
-  FuncnameList.Add('999888t');
+  FuncNameList := TStringList.Create;
+  FuncNameList.Add('999888t');
   StrList := TStringList.Create;
   StrList.Add('999888t');
   FObjectList := TStringList.Create;
@@ -196,17 +204,18 @@ end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
 begin
-  if Index > FFuncPropCount then Result := nil
+  if Index > FFuncPropCount then
+    Result := nil
   else
   begin
     Result := @FFuncPropTable[index - 1]
   end;
 end;
 
-procedure TPropTable.SetFuncPropTable(Index: Integer;
-  const Value: PFuncProp);
+procedure TPropTable.SetFuncPropTable(Index: Integer; const Value: PFuncProp);
 begin
-  if Index < 0 then Exit;
+  if Index < 0 then
+    Exit;
   if index >= FFuncPropCount then
   begin
     SetLength(FFuncPropTable, index);
@@ -224,7 +233,7 @@ end;
 function TPropTable.GetObjectAddr(AObjectName: string): Integer;
 begin
   Result := FObjectList.IndexOf(AObjectName);
-  if Result = -1  then
+  if Result = -1 then
   begin
     Result := FObjectList.Add(AObjectName);
     SetObjectPropTable(ObjectId, AObjectName);
@@ -239,29 +248,34 @@ end;
 
 function TPropTable.GetObjectValuePropTable(X, Y: Integer): string;
 begin
-  if (Length(FObjectValuePropTable) > X) and (Length(FObjectValuePropTable[X]) > Y) then
+  if (Length(FObjectValuePropTable) > X) and
+    (Length(FObjectValuePropTable[X]) > Y) then
     Result := FObjectValuePropTable[X][Y];
 end;
 
-procedure TPropTable.SetFuncVarPropTable(X, Y: Integer;
-  const Value: string);
+procedure TPropTable.SetFuncVarPropTable(X, Y: Integer; const Value: string);
 begin
-  if Length(FFuncVarPropTable) <= X then SetLength(FFuncVarPropTable, X + 1);
-  if Length(FFuncVarPropTable[X]) <= Y then SetLength(FFuncVarPropTable[X], Y + 1);
+  if Length(FFuncVarPropTable) <= X then
+    SetLength(FFuncVarPropTable, X + 1);
+  if Length(FFuncVarPropTable[X]) <= Y then
+    SetLength(FFuncVarPropTable[X], Y + 1);
   FFuncVarPropTable[X][Y] := Value;
 end;
 
 procedure TPropTable.SetObjectPropTable(X: Integer; const Value: string);
 begin
-  if Length(FObjectPropTable) <= X then SetLength(FObjectPropTable, X + 1);
-  FObjectPropTable[X]:= Value;
+  if Length(FObjectPropTable) <= X then
+    SetLength(FObjectPropTable, X + 1);
+  FObjectPropTable[X] := Value;
 end;
 
 procedure TPropTable.SetObjectValuePropTable(X, Y: Integer;
   const Value: string);
 begin
-  if Length(FObjectValuePropTable) <= X then SetLength(FObjectValuePropTable, X + 1);
-  if Length(FObjectValuePropTable[X]) <= Y then SetLength(FObjectValuePropTable[X], Y + 1);
+  if Length(FObjectValuePropTable) <= X then
+    SetLength(FObjectValuePropTable, X + 1);
+  if Length(FObjectValuePropTable[X]) <= Y then
+    SetLength(FObjectValuePropTable[X], Y + 1);
   FObjectValuePropTable[X][Y] := Value;
 end;
 
