@@ -774,7 +774,7 @@ begin
     end;
   end;
   Match(tkrightpart);
-  Match(tkbegin);
+//  Match(tkbegin);
   if GetNextToken() <> tkend then
     Stmt_sequence;
   Match(tkend);
