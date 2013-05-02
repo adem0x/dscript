@@ -3,7 +3,7 @@ unit uparser;
 { bnf
   program -> stmt-sequence
   stmt-sequence -> stmt-sequence;statement|statement
-  statement -> if-stmt| while- stmt| assign-stmt| read-stmt| write-stmt | func-stmt | var-stmt| return-stmt
+  statement -> for-stmt|if-stmt| while- stmt| assign-stmt| read-stmt| write-stmt | func-stmt | var-stmt| return-stmt
   if-stmt -> if logicexp then stmt-sequence end | if exp then stmt-sequence else stmt-sequence end
   while-stmt-> while logicexp do stmt-sequence end
   assign-stmt -> identifiers = sexp|identifiers|callfunc-stmt|object-stmt
@@ -33,7 +33,7 @@ type
   private
     FEmitter: TEmitter;
     CurrentToken: Token;
-    Stack: integer;
+    Stack: Integer;
     TempVar: Boolean;
     TempVarCount: Integer;
     AnonyMousFunc: Boolean;
@@ -41,9 +41,11 @@ type
     FInWhileStmt: Boolean;
     FBreakList: TList;
     FContinueList: TList;
+    FObjectId: Integer;
   private
     FPropTable: TPropTable;
     FLex: TLex;
+    FOpt: Boolean;
     function GetNextToken(AMactch: Boolean = False): Token;
     function GetToken(): string;
     function Match(AToken: Token): Boolean;
@@ -63,6 +65,7 @@ type
     function stmt_write: TEmitInts;
     function stmt_func: TEmitInts;
     function stmt_object: TEmitInts;
+    function stmt_for: TEmitInts;
     function sExp: TEmitInts;
     function logicexp: TEmitInts;
     function asop: TEmitInts;
@@ -72,15 +75,16 @@ type
     function logicop: TEmitInts;
     function num: string;
     function sident(): string; overload;
-    function sident(aIdent: string): integer; overload;
+    function sident(aIdent: string): Integer; overload;
     function sgetstring: string; overload;
-    function sgetstring(s: string): integer; overload;
+    function sgetstring(s: string): Integer; overload;
     function idents(): string;
     function stmt_var: TEmitInts;
     function stmt_return: TEmitInts;
     function reversedop(AEmitInts: _TEmitInts): _TEmitInts;
     function stmt_callfunc: TEmitInts;
     procedure ToEmitter;
+    property Opt: Boolean read FOpt write FOpt;
   end;
 
 implementation
@@ -137,6 +141,8 @@ function TParser.statement: TEmitInts;
 begin
   CurrentToken := GetNextToken(False);
   case CurrentToken of
+    tkfor:
+      stmt_for;
     tkread:
       stmt_read;
     tkwrite:
@@ -150,10 +156,10 @@ begin
     tkvar:
       stmt_var;
     tkfunc:
-    begin
-      AnonyMousFunc := False;
-      stmt_func;
-    end;
+      begin
+        AnonyMousFunc := False;
+        stmt_func;
+      end;
     tkreturn:
       stmt_return;
     tkbreak:
@@ -162,7 +168,8 @@ begin
       stmt_continue;
     tksemicolon:
       Match(tksemicolon);
-    tkhalt: ;
+    tkhalt:
+      ;
   else
     ParserError('not clear' + GetToken);
   end;
@@ -172,7 +179,7 @@ function TParser.stmt_if: TEmitInts;
 var
   gtoken: TEmitInts;
   _p1: TEmitInts;
-  linenoifend, linenoelseend: integer;
+  linenoifend, linenoelseend: Integer;
 begin
   Match(tkif);
   gtoken := logicexp;
@@ -205,17 +212,63 @@ begin
 end;
 
 function TParser.stmt_object: TEmitInts;
+var
+  m_objaddr, m_lastobjid: Integer;
+  _p1, _p2, _p3: TEmitInts;
+  CurrentToken: Token;
 begin
-
+  Inc(Stack);
+  Match(tkleftbrace);
+  Inc(FObjectId);
+  FPropTable.EmitObject := True;
+  m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
+  m_lastobjid := FPropTable.ObjectId;
+  FPropTable.ObjectId := m_objaddr;
+  Result.Ints := pobject;
+  Result.iInstr := m_objaddr;
+  Result.sInstr := IntToStr(FObjectId);
+  FEmitter.EmitCode(inewobj, Result);
+  while True do
+  begin
+    CurrentToken := GetNextToken();
+    case CurrentToken of
+      tkrightbrace:
+        Break;
+      tksemicolon: Match(tksemicolon);
+    else
+      _p1.Ints := iident;
+      _p1.sInstr := idents;
+      _p1.iInstr := FPropTable.GetValueAddr(_p1.sInstr);
+      Match(tkequal);
+      case GetNextToken() of
+        tkfunc:
+          begin
+            Result := stmt_func;
+          end;
+      else
+        begin
+          _p2 := sExp;
+          _p3.Ints := pint;
+          _p3.iInstr := m_objaddr;
+          FEmitter.EmitCode(iputobjv, _p2, _p3);
+        end;
+      end;
+    end;
+  end;
+  Match(tkrightbrace);
+  Dec(FObjectId);
+  FPropTable.EmitObject := False;
+  FPropTable.ObjectId := m_objaddr;
+  Dec(Stack);
 end;
 
 function TParser.stmt_while: TEmitInts;
 var
   gtoken: TEmitInts;
   _p1: TEmitInts;
-  lineno1, lineno2, I: integer;
+  lineno1, lineno2, I: Integer;
   lastbreaklist, lastcontinuelist: TList;
-  //实现while嵌套
+  // 实现while嵌套
 begin
   Match(tkwhile);
   FInWhileStmt := True;
@@ -277,7 +330,10 @@ begin
       begin
         Match(tkequal);
         _p2 := sExp;
-        if _p2.Ints = pfunc then
+        if _p2.Ints = pobject then
+        begin
+          FEmitter.EmitCode(imov, _p2, Result);
+        end else if _p2.Ints = pfunc then
         begin
           _p3.Ints := iident;
           _p3.sInstr := '1tempvar' + IntToStr(Stack);
@@ -287,12 +343,11 @@ begin
         end
         else
         begin
-          if _P2.Ints = pfuncaddr then
+          if _p2.Ints = pfuncaddr then
           begin
-            FPropTable.funcproptable[Result.iInstr] :=
-              FPropTable.funcproptable[_p2.iInstr];
+            FPropTable.funcproptable[Result.iInstr] := FPropTable.funcproptable
+              [_p2.iInstr];
           end;
-          
           FEmitter.EmitCode(imov, _p2, Result);
         end;
       end;
@@ -304,13 +359,8 @@ begin
         Result.sInstr := IntToStr(Result.iInstr);
         FEmitter.EmitCode(icall, Result);
       end;
-    tkleftbrace:
-      begin
-        _p2 := stmt_object;
-        FEmitter.EmitCode(imov, _p2, Result);
-      end;
-    tksemicolon:;
-    else
+    tksemicolon: Match(tksemicolon);
+  else
     ParserError('unknown assign word' + GetToken);
   end;
   Dec(Stack);
@@ -318,9 +368,10 @@ end;
 
 function TParser.stmt_break: TEmitInts;
 begin
-  if not FInWhileStmt then ParserError('not in parse while');
+  if not FInWhileStmt then
+    ParserError('not in parse while');
   Match(tkbreak);
-  FBreakList.Add(Pointer(FEmitter.EmitNop))
+  FBreakList.Add(Pointer(FEmitter.emitnop))
 end;
 
 function TParser.sExp: TEmitInts; // 一般表达式
@@ -337,11 +388,23 @@ begin
           gtoken := asop;
           _p1 := Result;
           _p2 := term;
-          _p3.Ints := iident;
-          _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-          FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
-          Result := _p3;
+          if (_p1.Ints = pint) and (_p2.Ints = pint) and Opt then
+          begin
+            Result.Ints := pint;
+            if gtoken.Ints = iadd then
+              Result.iInstr := _p1.iInstr + _p2.iInstr
+            else
+              Result.iInstr := _p1.iInstr - _p2.iInstr;
+            Result.sInstr := IntToStr(Result.iInstr)
+          end
+          else
+          begin
+            _p3.Ints := iident;
+            _p3.sInstr := '1tempvar' + IntToStr(Stack);
+            _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+            FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
+            Result := _p3;
+          end;
         end;
     else
       Break;
@@ -471,13 +534,29 @@ begin
           gtoken := mdop;
           _p1 := Result;
           _p2 := factor;
-          _p3.Ints := iident;
-          _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-          FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
-          Result := _p3;
+          if (_p1.Ints = pint) and (_p2.Ints = pint) and Opt then
+          begin
+            Result.Ints := pint;
+            case gtoken.Ints of
+              imul:
+                Result.iInstr := _p1.iInstr * _p2.iInstr;
+              idiv:
+                Result.iInstr := _p1.iInstr div _p2.iInstr;
+              imod:
+                Result.iInstr := _p1.iInstr mod _p2.iInstr;
+            end;
+            Result.sInstr := IntToStr(Result.iInstr)
+          end
+          else
+          begin
+            _p3.Ints := iident;
+            _p3.sInstr := '1tempvar' + IntToStr(Stack);
+            _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+            FEmitter.EmitCode(gtoken.Ints, _p1, _p2, _p3);
+            Result := _p3;
+          end;
         end;
-        tkleftpart:
+      tkleftpart:
         begin
           stmt_callfunc;
           Result.Ints := pfunc;
@@ -491,11 +570,15 @@ begin
           Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
           FEmitter.EmitCode(ipop, Result);
         end;
-        tkfunc:
+      tkfunc:
         begin
           AnonyMousFunc := True;
           Result := stmt_func;
-        end
+        end;
+      tkleftbrace:
+        begin
+          Result := stmt_object;
+        end;
     else
       Break;
     end;
@@ -529,9 +612,9 @@ begin
         Result.Ints := iident;
         Result.sInstr := sident;
         Result.iInstr := sident(Result.sInstr);
-//        if Result.iInstr > 0 then
-//          if FPropTable.vartypeproptable[Result.iInstr] <> inone then
-//            Result.Ints := FPropTable.vartypeproptable[Result.iInstr]
+        // if Result.iInstr > 0 then
+        // if FPropTable.vartypeproptable[Result.iInstr] <> inone then
+        // Result.Ints := FPropTable.vartypeproptable[Result.iInstr]
       end;
     tkleftpart:
       begin
@@ -555,7 +638,7 @@ begin
   Result := GetToken;
 end;
 
-function TParser.sident(aIdent: string): integer;
+function TParser.sident(aIdent: string): Integer;
 begin
   Result := FPropTable.FindAddr(aIdent);
   if Result = 0 then
@@ -568,7 +651,7 @@ begin
   Result := GetToken;
 end;
 
-function TParser.sgetstring(s: string): integer;
+function TParser.sgetstring(s: string): Integer;
 begin
   Result := FPropTable.getstraddr(s);
 end;
@@ -596,14 +679,54 @@ begin
   Dec(Stack);
 end;
 
+function TParser.stmt_for: TEmitInts;
+var
+  _p1, _p2, _p3, _p4, _p5: TEmitInts;
+  LineNo: Integer;
+begin
+  Match(tkfor);
+  _p1.Ints := iident;
+  _p1.sInstr:= sident;
+  _p1.iInstr := - FPropTable.GetTempVarAddr(_p1.sInstr);
+  Match(tkequal);
+  _p2 := sExp;
+  Match(tkcomma);
+  _p3 := sExp;
+  if GetNextToken() = tkcomma then
+  begin
+    Match(tkcomma);
+    _p4 := sExp
+  end
+  else
+  begin
+    _p4.Ints := pint;
+    _p4.iInstr := 1;
+  end;
+  FEmitter.EmitCode(imov, _p2, _p1);
+  FEmitter.EmitCode(icmp, _p1, _p3);
+  LineNo := FEmitter.EmitNop;
+  Match(tkdo);
+  while GetNextToken() <> tkend do
+    Stmt_sequence;
+  FEmitter.EmitCode(iadd, _p1, _p4, _p1);
+  _p5.Ints := pint;
+  _p5.iInstr := -(FEmitter.CodeLine - LineNo + 1);
+  FEmitter.EmitCode(ijmp, _p5);
+  _p5.Ints := pint;
+  _p5.iInstr := FEmitter.CodeLine - LineNo;
+  FEmitter.ModifiyCode(LineNo, ijbe, _p5);
+  Match(tkend);
+end;
+
 function TParser.stmt_func: TEmitInts;
 var
-  CurrentCodeLine, I: integer;
+  CurrentCodeLine, I: Integer;
   _p1: TEmitInts;
-  LineNo, LineNo2: Integer;
+  LineNo, lineno2: Integer;
   m_FuncProp: PFuncProp;
 begin
-  if FPropTable.EmitFunc then  ParserError('do not support nest func');
+  if FPropTable.EmitFunc then
+    ParserError('do not support nest func');
   FFrontList.Clear;
   FPropTable.ClearTempVar;
   TempVarCount := 0;
@@ -611,7 +734,7 @@ begin
   FPropTable.EmitFunc := True;
   CurrentCodeLine := FEmitter.codeline;
   FEmitter.codeline := FEmitter.funccodeline;
-  LineNo := FEmitter.EmitNop();
+  LineNo := FEmitter.emitnop();
   Match(tkfunc);
   if not AnonyMousFunc then
   begin
@@ -640,7 +763,7 @@ begin
         begin
           _p1.Ints := iident;
           _p1.sInstr := sident;
-          _p1.iInstr := -FPropTable.GetTempVarAddr(_p1.sInstr);
+          _p1.iInstr := -FPropTable.gettempvaraddr(_p1.sInstr);
           FEmitter.EmitCode(ipop, _p1);
         end;
       tkcomma:
@@ -654,15 +777,15 @@ begin
   Match(tkend);
   for I := 0 to FFrontList.Count - 1 do
   begin
-    LineNo2 := Integer(FFrontList[I]);
+    lineno2 := Integer(FFrontList[I]);
     _p1.Ints := pint;
-    _p1.iInstr :=FEmitter.codeline - LineNo2;
-    FEmitter.ModifiyCode(LineNo2, ijmp, _p1);
+    _p1.iInstr := FEmitter.codeline - lineno2;
+    FEmitter.modifiycode(lineno2, ijmp, _p1);
   end;
   FFrontList.Clear;
   if TempVarCount = 0 then
   begin
-    //删除1条指令，入口地址要修改
+    // 删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
     I := FPropTable.getfuncaddr(FPropTable.FuncName);
     m_FuncProp := FPropTable.funcproptable[I];
@@ -672,10 +795,10 @@ begin
   begin
     _p1.Ints := pint;
     _p1.iInstr := TempVarCount;
-    FEmitter.ModifiyCode(LineNo, iebp, _p1);
+    FEmitter.modifiycode(LineNo, iebp, _p1);
 
     _p1.Ints := pint;
-    _p1.iInstr := - TempVarCount;
+    _p1.iInstr := -TempVarCount;
     FEmitter.EmitCode(iebp, _p1);
   end;
   FEmitter.EmitCode(iret);
@@ -689,7 +812,7 @@ end;
 function TParser.stmt_callfunc: TEmitInts;
 var
   PushList: array [0 .. 100] of TEmitInts;
-  PushI, I: integer;
+  PushI, I: Integer;
 begin
   Inc(Stack);
   Match(tkleftpart);
@@ -738,8 +861,9 @@ begin
           Result.sInstr := '1tempvar' + IntToStr(Stack);
           Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
           FEmitter.EmitCode(ipop, Result);
-          if PushI <> 1 then ParserError('PushI Error');
-          PushList[0] := Result; 
+          if PushI <> 1 then
+            ParserError('PushI Error');
+          PushList[0] := Result;
         end;
     end;
   end;
@@ -751,9 +875,10 @@ end;
 
 function TParser.stmt_continue: TEmitInts;
 begin
-  if not FInWhileStmt then ParserError('not in parse while');
+  if not FInWhileStmt then
+    ParserError('not in parse while');
   Match(tkcontinue);
-  FContinueList.Add(Pointer(FEmitter.EmitNop))
+  FContinueList.Add(Pointer(FEmitter.emitnop))
 end;
 
 function TParser.idents(): string;
@@ -769,7 +894,8 @@ end;
 
 function TParser.stmt_var: TEmitInts;
 begin
-  if not FPropTable.EmitFunc then ParserError('var must be def in function');
+  if not FPropTable.EmitFunc then
+    ParserError('var must be def in function');
   Match(tkvar);
   TempVar := True;
   stmt_assign;
@@ -778,12 +904,13 @@ end;
 
 function TParser.stmt_return: TEmitInts;
 begin
-  if not FPropTable.EmitFunc then ParserError('return must be def in function');
+  if not FPropTable.EmitFunc then
+    ParserError('return must be def in function');
   Match(tkreturn);
   Result := sExp;
   FEmitter.EmitCode(ipush, Result);
-  FFrontList.Add(Pointer(FEmitter.EmitNop()));
-//  FEmitter.EmitCode(iret);
+  FFrontList.Add(Pointer(FEmitter.emitnop()));
+  // FEmitter.EmitCode(iret);
 end;
 
 procedure TParser.parser(ASource: PAnsiChar);

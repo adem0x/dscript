@@ -184,7 +184,7 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write(_p.sInstr, ' '); {$ENDIF}
+{$IFDEF emit} Write('''',_p.sInstr, ''' '); {$ENDIF}
           end;
         iident:
           begin
@@ -193,6 +193,12 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         pfuncaddr:
+        begin
+            m.Write(_p.Ints, 1);
+            m.Write(_p.iInstr, SizeOf(integer));
+{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+        end;
+        pobject:
         begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));

@@ -239,7 +239,7 @@ begin
             pint:
               CoreWrite(_p1._Int);
             pstring:
-              CoreWrite(StringList[(_p1._Int)]);
+              CoreWrite(_p1._String);
           end;
         end;
       imov:

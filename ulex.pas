@@ -17,6 +17,8 @@ uses
   var
   break
   continue
+  new
+  for
   .
   <
   >
@@ -42,10 +44,10 @@ type
     tkfloatnum, tknum, tkaend, tkdot, tkequal, tkbigop, tksmallop, tkbigequalop,
     tksmallequalop, tkunequal, tkleftpart, tkrightpart, tksemicolon, tkstring,
     tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue, tkmodop,
-    tkleftbrace, tkrightbrace);
+    tkleftbrace, tkrightbrace, tknew, tkfor);
 
 var
-  KeyWord: array [0 .. 14] of string = (
+  KeyWord: array [0 .. 16] of string = (
     'read',
     'write',
     'if',
@@ -60,9 +62,11 @@ var
     'return',
     'ret',
     'break',
-    'continue'
+    'continue',
+    'new',
+    'for'
   );
-  KeyWordToken: array [0 .. 14] of Token = (
+  KeyWordToken: array [0 .. 16] of Token = (
     tkread,
     tkwrite,
     tkif,
@@ -77,7 +81,9 @@ var
     tkreturn,
     tkret,
     tkbreak,
-    tkcontinue
+    tkcontinue,
+    tknew,
+    tkfor
   );
 
 type
