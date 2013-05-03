@@ -35,7 +35,7 @@ begin
 
   with TStringList.Create do
   begin
-    LoadFromFile('1.lua');
+    LoadFromFile('test\1.lua');
     Source := PAnsiChar(AnsiString(GetText));
   end;
   // Source := 'c= 4*3 / 2; write c';

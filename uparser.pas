@@ -262,7 +262,9 @@ begin
           case GetNextToken() of
             tkfunc:
               begin
+                AnonyMousFunc := True;
                 Result := stmt_func;
+                FEmitter.EmitCode(iputobjv,_p4 , _p1, Result);
               end;
           else
             begin
@@ -333,7 +335,7 @@ end;
 
 function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
-  _p1, _p2, _p3, _p4: TEmitInts;
+  _p1, _p2, _p3, _p4,  _p5: TEmitInts;
   LineNo: Integer;
   EmitObj: Boolean;
 label L1;
@@ -351,6 +353,7 @@ begin
   begin
     Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
   end;
+  _p5 := Result;
 L1:
   case GetNextToken() of
     tkdot:
@@ -406,10 +409,18 @@ L1:
     tkleftpart:
       begin
         _p2 := stmt_callfunc;
-        Result.Ints := pfunc;
-        Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
-        Result.sInstr := IntToStr(Result.iInstr);
-        FEmitter.EmitCode(icall, Result);
+        if not EmitObj then
+        begin
+          FEmitter.EmitCode(icall, Result);
+        end
+        else
+        begin
+          _p3.Ints := pfunc;
+          _p3.iInstr := FPropTable.getfuncaddr(Result.sInstr);
+          _p3.sInstr := IntToStr(Result.iInstr);
+          FEmitter.EmitCode(igetobjv, _p5, _p1, Result);
+          FEmitter.EmitCode(icall, Result);
+        end;
       end;
     tksemicolon:
       Match(tksemicolon);
@@ -632,7 +643,7 @@ begin
       tkleftpart:
         begin
           stmt_callfunc;
-          Result.Ints := pfunc;
+          Result.Ints := iident;
           Result.iInstr := FPropTable.FindAddr(Result.sInstr);
           if Result.iInstr = 0 then
             Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
@@ -826,7 +837,7 @@ begin
   begin
     FPropTable.FuncName := '1AnonyMousFunc' + IntToStr(Stack);
     I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
-    Result.Ints := pfuncaddr;
+    Result.Ints := pfunc;
     Result.sInstr := FPropTable.FuncName;
     Result.iInstr := I;
   end;

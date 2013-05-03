@@ -186,8 +186,8 @@ begin
             _p3^ := _pt^
           else
             // 再建立一个物体的属性表，修改下
-            RunError('ObjectValue ' + IntToHex(Integer(_p1._Object), 8) +
-              ' is''not exist');
+            RunError('ObjectValue 0x' + IntToHex(Integer(_p1._Object), 8) +
+              ' is not exist');
 
         end;
       iputobjv:
@@ -341,11 +341,9 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var "' + _p1._Id + '" is not def on line:' +
-              IntToStr(IP));
+            RunError('var "' + _p1._Id + '" is not def');
           if _p2._Type = inone then
-            RunError('var "' + _p2._Id + '" is not def on line:' +
-              IntToStr(IP));
+            RunError('var "' + _p2._Id + '" is not def');
           case _p1._Type of
             pint:
               begin
