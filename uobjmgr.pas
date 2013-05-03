@@ -29,8 +29,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function DeleteAObject(AObj: TObj): Integer; overload;
-    function DeleteAObject(AIndex: Integer): Integer; overload;
+    function DeleteAObject(AIndex: Integer): Integer;
     function AddAObject(AObj: TObj): Integer;
     function GetAObject(AIndex: Integer): TObj;
     function ObjectCount: Integer;
@@ -41,8 +40,6 @@ implementation
 { TObj }
 
 function TObj.AddAValue(AIndex: Integer; AValue: TValue): Boolean;
-var
-  v: PValue;
 begin
   if AIndex >= FValuesCount then
   begin
@@ -76,6 +73,7 @@ end;
 function TObj.DelAValue(AName: Integer): PValue;
 begin
   FValues[AName]._Type := inone;
+  Result := nil;
 end;
 
 function TObj.FindAValue(AName: Integer): PValue;
@@ -87,10 +85,6 @@ begin
 end;
 
 { TObjMgr }
-function TObjMgr.DeleteAObject(AObj: TObj): Integer;
-begin
-
-end;
 
 function TObjMgr.AddAObject(AObj: TObj): Integer;
 begin
