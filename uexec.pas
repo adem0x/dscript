@@ -302,8 +302,7 @@ begin
           GetValue(CodeBuf, _p1);
           GetValue(CodeBuf, _p2);
           if _p1._Type = inone then
-            RunError('var "' + _p1._Id + '" is not def on line:' +
-              IntToStr(IP));
+            RunError('var "' + _p1._Id + '" is not def');
           case _p1._Type of
             pfuncaddr:
               begin
