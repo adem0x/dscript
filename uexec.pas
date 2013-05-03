@@ -22,7 +22,7 @@ type
     FPropTable: TPropTable;
     FIP, FIPEnd: Integer;
     FFunctionList: TStringList;
-    FObjMgr: TObjMgr;
+    FObjMgr, FCopyObjMgr: TObjMgr;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -69,6 +69,8 @@ begin
   FStringList := TStringList.Create;
   FCode := TList.Create;
   FFunctionList := TStringList.Create;
+  FObjMgr := TObjMgr.Create;
+  FCopyObjMgr := TObjMgr.Create;
 end;
 
 procedure TExec.CoreExec();
@@ -83,6 +85,7 @@ var
   I: Integer;
   m_FuncProp: PFuncProp;
   VarI: Integer;
+  Obj: TObj;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
     I: Integer;
@@ -91,6 +94,16 @@ var
     Value._Type := _PEmitInts(P)^;
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
+      pobject:
+      begin
+        Value._Int := PInteger(P)^;
+        Inc(P, SizeOf(Integer));
+      end;
+      ivalue:
+      begin
+        Value._Int := PInteger(P)^;
+        Inc(P, SizeOf(Integer));
+      end;
       pint, pfunc:
         begin
           Value._Int := PInteger(P)^;
@@ -109,12 +122,12 @@ var
           if I > 0 then
           begin
             Value := @globlevar[I];
-            Value._String := FPropTable.GetFuncVarPropTable(0, I);
+            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
             Value := @tempvar[EBP - I];
-            Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
+            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
         end;
       pfuncaddr:
@@ -124,12 +137,12 @@ var
           if I > 0 then
           begin
             Value := @globlevar[I];
-            Value._String := FPropTable.GetFuncVarPropTable(0, I);
+            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
           end
           else
           begin
             Value := @tempvar[EBP - I];
-            Value._String := FPropTable.GetFuncVarPropTable(VarI, -I);
+            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
           Value._Type := pfuncaddr;
         end;
@@ -165,15 +178,35 @@ begin
     case Ints of
       igetobjv:
       begin
-
+        GetValue(CodeBuf, _p1);//obj
+        GetValue(CodeBuf, _p2);//objvalue
+        GetValue(CodeBuf, _p3);//copyvalue
+        _p3^ := TObj(_p1._Object).FindAValue(_p2._Int)^;
       end;
       iputobjv:
       begin
-
+        GetValue(CodeBuf, _p1);//obj
+        GetValue(CodeBuf, _p2);//objvalue
+        GetValue(CodeBuf, _p3);//copyvalue
+        _p1._Object := FObjMgr.GetAObject(_p1._Int);
+        TObj(_p1._Object).AddAValue(_p2._Int, _p3^)
       end;
       inewobj:
       begin
-
+        GetValue(CodeBuf, _p1);
+        if _p1._Int >= FCopyObjMgr.ObjectCount then
+          Obj:= TObj.Create(FCopyObjMgr);
+      end;
+      icopyobj:
+      begin
+        GetValue(CodeBuf, _p1);//obj
+        GetValue(CodeBuf, _p2);//copyvalue
+        Obj:= TObj.Create(FObjMgr);
+        _p1._Object := FCopyObjMgr.GetAObject(_p1._Int);
+        TObj(_p1._Object).CopyTo(Obj);
+        _p2._Type := pobject;
+        _p2._Int := _p1._Int;
+        _p2._Object := Obj;
       end;
       inop:
         begin
@@ -248,7 +281,7 @@ begin
         begin
           GetValue(CodeBuf, _p1);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -262,7 +295,7 @@ begin
           GetValue(CodeBuf, _p1);
           GetValue(CodeBuf, _p2);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pfuncaddr:
@@ -294,10 +327,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var "' + _p2._String + '" is not def on line:' +
+            RunError('var "' + _p2._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -327,10 +360,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var "' + _p2._String + '" is not def on line:' +
+            RunError('var "' + _p2._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -341,7 +374,7 @@ begin
                 _p3._Int := _p1._Int * _p2._Int;
               end;
           else
-            RunError('var "' + _p1._String + '" type error on line:' +
+            RunError('var "' + _p1._Id + '" type error on line:' +
               IntToStr(IP));
           end;
         end;
@@ -351,10 +384,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var "' + _p2._String + '" is not def on line:' +
+            RunError('var "' + _p2._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -365,7 +398,7 @@ begin
                 _p3._Int := _p1._Int div _p2._Int;
               end;
           else
-            RunError('var "' + _p1._String + '" type error on line:' +
+            RunError('var "' + _p1._Id + '" type error on line:' +
               IntToStr(IP));
           end;
         end;
@@ -375,10 +408,10 @@ begin
           GetValue(CodeBuf, _p2);
           GetValue(CodeBuf, _p3);
           if _p1._Type = inone then
-            RunError('var "' + _p1._String + '" is not def on line:' +
+            RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
           if _p2._Type = inone then
-            RunError('var "' + _p2._String + '" is not def on line:' +
+            RunError('var "' + _p2._Id + '" is not def on line:' +
               IntToStr(IP));
           case _p1._Type of
             pint:
@@ -389,7 +422,7 @@ begin
                 _p3._Int := _p1._Int mod _p2._Int;
               end;
           else
-            RunError('var "' + _p1._String + '" type error on line:' +
+            RunError('var "' + _p1._Id + '" type error on line:' +
               IntToStr(IP));
           end;
         end;

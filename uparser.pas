@@ -171,7 +171,7 @@ begin
     tkhalt:
       ;
   else
-//    ParserError('not clear' + GetToken);
+    // ParserError('not clear' + GetToken);
   end;
 end;
 
@@ -221,7 +221,7 @@ begin
   Match(tkleftbrace);
   Inc(FObjectId);
   FPropTable.EmitObject := True;
-//  m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
+  // m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
   m_objaddr := FPropTable.GetObjectAddr(AInts.sInstr);
   m_lastobjid := FPropTable.ObjectId;
   FPropTable.ObjectId := m_objaddr;
@@ -229,6 +229,7 @@ begin
   Result.iInstr := m_objaddr;
   Result.sInstr := IntToStr(FObjectId);
   FEmitter.EmitCode(inewobj, Result);
+  FEmitter.EmitCode(icopyobj, Result, AInts^);
   while True do
   begin
     CurrentToken := GetNextToken();
@@ -238,7 +239,7 @@ begin
       tksemicolon:
         Match(tksemicolon);
     else
-      _p1.Ints := iident;
+      _p1.Ints := ivalue;
       _p1.sInstr := idents;
       _p1.iInstr := FPropTable.GetValueAddr(_p1.sInstr);
       Match(tkequal);
@@ -250,7 +251,7 @@ begin
       else
         begin
           _p2 := sExp;
-          _p3.Ints := pint;
+          _p3.Ints := pobject;
           _p3.iInstr := m_objaddr;
           FEmitter.EmitCode(iputobjv, _p3, _p1, _p2);
         end;
@@ -314,6 +315,7 @@ end;
 function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
   _p2, _p3: TEmitInts;
+  LineNo: Integer;
 begin
   Inc(Stack);
   Result.Ints := iident;
@@ -331,10 +333,10 @@ begin
     tkequal:
       begin
         Match(tkequal);
-        _p2 := sExp(@result);
+        _p2 := sExp(@Result);
         if _p2.Ints = pobject then
         begin
-          FEmitter.EmitCode(imov, _p2, Result);
+//          FEmitter.ModifiyCode(LineNo, icopyobj, _p2, Result);
         end
         else if _p2.Ints = pfunc then
         begin
@@ -534,18 +536,25 @@ begin
   while True do
     case GetNextToken() of
       tkdot:
-      begin
-        Match(tkdot);
-        Match(tkident);
-        _p1.Ints := pint;
-        _p1.iInstr :=  FPropTable.FindObjectAddr(Result.sInstr);
-        if _p1.iInstr = -1  then ParserError(' '''+_p1.sInstr + ''' is not a object');
-        _p1.sInstr := GetToken();
-        _p2.Ints := pint;
-        _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p1.sInstr);
-        if _p2.iInstr = -1 then ParserError('Object '''+_p1.sInstr + ''' do not have a property '+ _p2.sInstr);
-        FEmitter.EmitCode(igetobjv, _p1, _p2, Result);
-      end;
+        begin
+          Match(tkdot);
+          Match(tkident);
+          _p1.Ints := pint;
+          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+          if _p1.iInstr = -1 then
+            ParserError(' ''' + _p1.sInstr + ''' is not a object');
+          _p2.sInstr := GetToken();
+          _p2.Ints := pint;
+          _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
+          if _p2.iInstr = -1 then
+            ParserError('Object ''' + _p1.sInstr + ''' do not have a property '
+              + _p2.sInstr);
+          _p3 := Result;
+          Result.Ints := iident;
+          Result.sInstr := '1tempvar' + IntToStr(Stack);
+          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+          FEmitter.EmitCode(igetobjv, _p3, _p2, Result);
+        end;
       tkmulop, tkdivop, tkmodop:
         begin
           gtoken := mdop;
@@ -728,7 +737,7 @@ begin
   FEmitter.EmitCode(ijmp, _p5);
   _p5.Ints := pint;
   _p5.iInstr := FEmitter.codeline - LineNo;
-  FEmitter.modifiycode(LineNo, ijbe, _p5);
+  FEmitter.modifiycode(LineNo, ijb, _p5);
   Match(tkend);
 end;
 
@@ -785,7 +794,7 @@ begin
     end;
   end;
   Match(tkrightpart);
-//  Match(tkbegin);
+  // Match(tkbegin);
   if GetNextToken() <> tkend then
     Stmt_sequence;
   Match(tkend);

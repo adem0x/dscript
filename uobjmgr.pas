@@ -9,13 +9,18 @@ type
   TObjMgr = class;
 
   TObj = class
+  private
     Name: Integer;
-    FValues: TList;
+    FValues: array of TValue;
+    FValuesCount: Integer;
+    FId: Integer;
   public
     constructor Create(AObjMgr: TObjMgr);
     function FindAValue(AName: Integer): PValue;
-    function AddAValue(AValue: TValue): Integer;
+    function AddAValue(AIndex: Integer; AValue: TValue): Boolean;
     function DelAValue(AName: Integer): PValue;
+    function CopyTo(AObj: TObj): Boolean;
+    property Id: Integer read FId;
   end;
 
   TObjMgr = class
@@ -27,43 +32,54 @@ type
     function DeleteAObject(AObj: TObj): Integer; overload;
     function DeleteAObject(AIndex: Integer): Integer; overload;
     function AddAObject(AObj: TObj): Integer;
+    function GetAObject(AIndex: Integer): TObj;
+    function ObjectCount: Integer;
   end;
-
-var
-  proplist: TStringList;
 
 implementation
 
 { TObj }
 
-function TObj.AddAValue(AValue: TValue): Integer;
+function TObj.AddAValue(AIndex: Integer; AValue: TValue): Boolean;
 var
   v: PValue;
 begin
-  New(v);
-  v^ := AValue;
-  Result := FValues.Add(v)
+  if AIndex >= FValuesCount then
+  begin
+    FValuesCount := AIndex + 1;
+    SetLength(FValues, FValuesCount);
+  end;
+  FValues[AIndex] := AValue;
+  Result := True;
+end;
+
+function TObj.CopyTo(AObj: TObj): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if not Assigned(AObj) then Exit;
+  for I := 0 to FValuesCount - 1 do
+  begin
+    AObj.AddAValue(I, FValues[I])
+  end;
+  Result := True;
 end;
 
 constructor TObj.Create(AObjMgr: TObjMgr);
 begin
   if Assigned(AObjMgr) then
-    AObjMgr.AddAObject(Self);
-  FValues := TList.Create;
+    FId := AObjMgr.AddAObject(Self);
 end;
 
 function TObj.DelAValue(AName: Integer): PValue;
-var
-  v: PValue;
 begin
-  v := FValues[AName];
-  Dispose(v);
-  v := nil;
+  FValues[AName]._Type := inone;
 end;
 
 function TObj.FindAValue(AName: Integer): PValue;
 begin
-  Result := FValues[AName];
+  Result := @FValues[AName];
 end;
 
 { TObjMgr }
@@ -74,17 +90,22 @@ end;
 
 function TObjMgr.AddAObject(AObj: TObj): Integer;
 begin
-
+  Result := FObjList.Add(AObj)
 end;
 
 constructor TObjMgr.Create;
 begin
   FObjList := TList.Create;
+  FObjList.Add(nil);
 end;
 
 function TObjMgr.DeleteAObject(AIndex: Integer): Integer;
 begin
-
+  if AIndex < FObjList.Count then
+  begin
+  TObj(FObjList[AIndex]).Free;
+  FObjList.Delete(AIndex);
+  end;
 end;
 
 destructor TObjMgr.Destroy;
@@ -99,12 +120,17 @@ begin
   inherited;
 end;
 
-initialization
+function TObjMgr.GetAObject(AIndex: Integer): TObj;
+begin
+  Result := nil;
+  if AIndex < FObjList.Count then
+    Result := FObjList[AIndex]
+end;
 
-proplist := TStringList.Create;
 
-finalization
-
-proplist.Free;
+function TObjMgr.ObjectCount: Integer;
+begin
+  Result := FObjList.Count
+end;
 
 end.
