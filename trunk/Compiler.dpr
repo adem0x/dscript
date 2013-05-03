@@ -38,6 +38,9 @@ begin
     LoadFromFile('test\1.lua');
     Source := PAnsiChar(AnsiString(GetText));
   end;
+  
+Source := 'add = function(a, b) return a+ b; end; write add(1, 2)';
+
   // Source := 'c= 4*3 / 2; write c';
   // Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c @';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c @';
@@ -50,10 +53,10 @@ begin
   // Source := 'f = {i}; f.i = 100; write f.i;' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
   // Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
-  // Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
-  // +
-  // 'for j = 1, 10 do write f.i; f = f.next; end; ' ;
-  // Source := 'write ''end''';
+//   Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
+//   +
+//   'for j = 1, 10 do write f.i; f = f.next; end; ' ;
+//   Source := 'write ''end''';
   try
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);

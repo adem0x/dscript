@@ -643,7 +643,7 @@ begin
       tkleftpart:
         begin
           stmt_callfunc;
-          Result.Ints := iident;
+          Result.Ints := pfunc;
           Result.iInstr := FPropTable.FindAddr(Result.sInstr);
           if Result.iInstr = 0 then
             Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
