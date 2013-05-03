@@ -50,8 +50,10 @@ begin
   // Source := 'mywrite(100)';
   // Source := 'write 4 % 2 @' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
-   Source := 'f = {i = 10; next = f}; write f.i; ';
-//  Source := 'for i = 1, 10 do write i; f = {i = 10; next = f}; end;' ;
+//   Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
+  Source := 'for j = 1, 10 do f = {i = j; next = f}; end;'
+  +
+  'for j = 1, 10 do write f.i; f = f.next; end; ' ;
   // Source := 'write ''end''';
   try
     gPropTable := TPropTable.Create;

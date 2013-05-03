@@ -8,7 +8,7 @@ type
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject, pfuncaddr,
     iebp, inop, imod,
-    iputobjv, igetobjv, inewob,
+    iputobjv, igetobjv, inewobj,icopyobj,ivalue,
     itheend);
   PEmitInts = ^TEmitInts;
 
@@ -25,6 +25,8 @@ type
     _Int, _iident: integer;
     _String: string;
     _Boolean: boolean;
+    _Object: Pointer;
+    _Id: string;
   end;
 
 var
@@ -67,6 +69,8 @@ var
     'putobjv',
     'getobjv',
     'newobj',
+    'copyobj',
+    'value',
     'theend'
   );
 

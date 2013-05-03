@@ -17,7 +17,8 @@ type
 
     function EmitNop(): integer;
     function DeleteCode(ALine: integer): Boolean;
-    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1: TEmitInts);
+    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1: TEmitInts); overload;
+    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1, _p2: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1, _p2: TEmitInts); overload;
@@ -41,6 +42,30 @@ function TEmitter.Ints2str(aInts: _TEmitInts): string;
 begin
   if aInts in [iread .. itheend] then
     Result := PrintInts[aInts];
+end;
+
+procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1,
+  _p2: TEmitInts);
+var
+  Param: TEmitInts;
+  P: Pointer;
+begin
+  Param.Ints := inone;
+  if not FPropTable.EmitFunc then
+  begin
+    P := EmitCoder[ALine];
+    FreeMem(P);
+    EmitCoder.Delete(ALine);
+  end
+  else
+  begin
+    P := EmitFunCoder[ALine];
+    FreeMem(P);
+    EmitFunCoder.Delete(ALine);
+  end;
+  Dec(CodeLine);
+  EmitCode(atoken, _p1, _p2
+  , Param, ALine);
 end;
 
 function TEmitter.str2Ints(aInts: string): _TEmitInts;
@@ -204,7 +229,13 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
-          end
+          end;
+        ivalue:
+          begin
+            m.Write(_p.Ints, 1);
+            m.Write(_p.iInstr, SizeOf(integer));
+{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+          end;
       else
         Write('emitparam error')
         // pfunc:
