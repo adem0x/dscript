@@ -20,6 +20,7 @@ uses
   continue
   new
   for
+  nil
   .
   <
   >
@@ -45,10 +46,10 @@ type
     tkfloatnum, tknum, tkaend, tkdot, tkequal, tkbigop, tksmallop, tkbigequalop,
     tksmallequalop, tkunequal, tkleftpart, tkrightpart, tksemicolon, tkstring,
     tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue,
-    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor);
+    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil);
 
 var
-  KeyWord: array [0 .. 16] of string = (
+  KeyWord: array [0 .. 17] of string = (
     'read',
     'write',
     'if',
@@ -65,9 +66,10 @@ var
     'break',
     'continue',
     'new',
-    'for'
+    'for',
+    'nil'
   );
-  KeyWordToken: array [0 .. 16] of Token = (
+  KeyWordToken: array [0 .. 17] of Token = (
     tkread,
     tkwrite,
     tkif,
@@ -84,7 +86,8 @@ var
     tkbreak,
     tkcontinue,
     tknew,
-    tkfor
+    tkfor,
+    tknil
   );
 
 type

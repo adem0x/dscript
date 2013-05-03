@@ -214,7 +214,7 @@ end;
 function TParser.stmt_object(AInts: PEmitInts): TEmitInts;
 var
   m_objaddr, m_lastobjid: Integer;
-  _p1, _p2, _p3: TEmitInts;
+  _p1, _p2, _p3, _p4: TEmitInts;
   CurrentToken: Token;
 begin
   Inc(Stack);
@@ -229,7 +229,10 @@ begin
   Result.iInstr := m_objaddr;
   Result.sInstr := IntToStr(FObjectId);
   FEmitter.EmitCode(inewobj, Result);
-  FEmitter.EmitCode(icopyobj, Result, AInts^);
+  _p4.Ints := iident;
+  _p4.sInstr := '1tempvar' + IntToStr(Stack);
+  _p4.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+  FEmitter.EmitCode(icopyobj, Result, _p4);
   while True do
   begin
     CurrentToken := GetNextToken();
@@ -242,22 +245,38 @@ begin
       _p1.Ints := ivalue;
       _p1.sInstr := idents;
       _p1.iInstr := FPropTable.GetValueAddr(_p1.sInstr);
-      Match(tkequal);
-      case GetNextToken() of
-        tkfunc:
+      CurrentToken := GetNextToken();
+      case CurrentToken of
+        tksemicolon:
           begin
-            Result := stmt_func;
+            _p2.Ints := inone;
+            _p3.Ints := pobject;
+            _p3.iInstr := m_objaddr;
+            FEmitter.EmitCode(iputobjv, _p4, _p1, _p2);
           end;
+        tkrightbrace:
+          Break;
       else
         begin
-          _p2 := sExp;
-          _p3.Ints := pobject;
-          _p3.iInstr := m_objaddr;
-          FEmitter.EmitCode(iputobjv, _p3, _p1, _p2);
-        end;
+          Match(tkequal);
+          case GetNextToken() of
+            tkfunc:
+              begin
+                Result := stmt_func;
+              end;
+          else
+            begin
+              _p2 := sExp;
+              _p3.Ints := pobject;
+              _p3.iInstr := m_objaddr;
+              FEmitter.EmitCode(iputobjv, _p4, _p1, _p2);
+            end;
+          end;
+        end
       end;
     end;
   end;
+  Result := _p4;
   Match(tkrightbrace);
   Dec(FObjectId);
   FPropTable.EmitObject := False;
@@ -314,9 +333,12 @@ end;
 
 function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
-  _p2, _p3: TEmitInts;
+  _p1, _p2, _p3, _p4: TEmitInts;
   LineNo: Integer;
+  EmitObj: Boolean;
+label L1;
 begin
+  EmitObj := False;
   Inc(Stack);
   Result.Ints := iident;
   Result.sInstr := idents;
@@ -329,31 +351,56 @@ begin
   begin
     Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
   end;
+L1:
   case GetNextToken() of
+    tkdot:
+      begin
+        Match(tkdot);
+        Match(tkident);
+        _p1.Ints := pint;
+        _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+        if _p1.iInstr = -1 then
+          ParserError(' ''' + _p1.sInstr + ''' is not a object');
+        _p2.sInstr := GetToken();
+        _p2.Ints := pint;
+        _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
+        if _p2.iInstr = -1 then
+          ParserError('Object ''' + _p1.sInstr + ''' do not have a property ' +
+            _p2.sInstr);
+        _p3 := Result;
+        Result.Ints := iident;
+        Result.sInstr := '1tempvar' + IntToStr(Stack);
+        Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+        EmitObj := True;
+        goto L1;
+      end;
     tkequal:
       begin
         Match(tkequal);
-        _p2 := sExp(@Result);
-        if _p2.Ints = pobject then
+        _p4 := sExp(@Result);
+        if not EmitObj then
         begin
-//          FEmitter.ModifiyCode(LineNo, icopyobj, _p2, Result);
-        end
-        else if _p2.Ints = pfunc then
-        begin
-          _p3.Ints := iident;
-          _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-          FEmitter.EmitCode(ipop, _p3);
-          FEmitter.EmitCode(imov, _p3, Result);
+          if _p4.Ints = pfunc then
+          begin
+            _p3.Ints := iident;
+            _p3.sInstr := '1tempvar' + IntToStr(Stack);
+            _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+            FEmitter.EmitCode(ipop, _p3);
+            FEmitter.EmitCode(imov, _p3, Result);
+          end
+          else
+          begin
+            if _p4.Ints = pfuncaddr then
+            begin
+              FPropTable.funcproptable[Result.iInstr] :=
+                FPropTable.funcproptable[_p4.iInstr];
+            end;
+            FEmitter.EmitCode(imov, _p4, Result);
+          end;
         end
         else
         begin
-          if _p2.Ints = pfuncaddr then
-          begin
-            FPropTable.funcproptable[Result.iInstr] := FPropTable.funcproptable
-              [_p2.iInstr];
-          end;
-          FEmitter.EmitCode(imov, _p2, Result);
+          FEmitter.EmitCode(iputobjv, _p3, _p2, _p4);
         end;
       end;
     tkleftpart:
@@ -645,6 +692,13 @@ begin
         Result := sExp;
         Match(tkrightpart);
       end;
+    tknil:
+      begin
+        Match(tknil);
+        Result.Ints := pobject;
+        Result.sInstr := 'nil';
+        Result.iInstr := 0;
+      end;
   end;
   Dec(Stack);
 end;
@@ -836,6 +890,7 @@ function TParser.stmt_callfunc(AInts: PEmitInts): TEmitInts;
 var
   PushList: array [0 .. 100] of TEmitInts;
   PushI, I: Integer;
+  _p1, _p2, _p3: TEmitInts;
 begin
   Inc(Stack);
   Match(tkleftpart);
@@ -887,6 +942,27 @@ begin
           if PushI <> 1 then
             ParserError('PushI Error');
           PushList[0] := Result;
+        end;
+      tkdot:
+        begin
+          Match(tkdot);
+          Match(tkident);
+          _p1.Ints := pint;
+          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+          if _p1.iInstr = -1 then
+            ParserError(' ''' + _p1.sInstr + ''' is not a object');
+          _p2.sInstr := GetToken();
+          _p2.Ints := pint;
+          _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
+          if _p2.iInstr = -1 then
+            ParserError('Object ''' + _p1.sInstr + ''' do not have a property '
+              + _p2.sInstr);
+          _p3 := Result;
+          Result.Ints := iident;
+          Result.sInstr := '1tempvar' + IntToStr(Stack);
+          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+          FEmitter.EmitCode(igetobjv, _p3, _p2, Result);
+          PushList[PushI - 1] := Result;
         end;
     end;
   end;

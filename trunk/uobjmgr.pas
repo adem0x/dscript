@@ -58,7 +58,8 @@ var
   I: Integer;
 begin
   Result := False;
-  if not Assigned(AObj) then Exit;
+  if not Assigned(AObj) then
+    Exit;
   for I := 0 to FValuesCount - 1 do
   begin
     AObj.AddAValue(I, FValues[I])
@@ -79,7 +80,10 @@ end;
 
 function TObj.FindAValue(AName: Integer): PValue;
 begin
-  Result := @FValues[AName];
+  if AName < Length(FValues) then
+    Result := @FValues[AName]
+  else
+    Result := nil;
 end;
 
 { TObjMgr }
@@ -103,8 +107,8 @@ function TObjMgr.DeleteAObject(AIndex: Integer): Integer;
 begin
   if AIndex < FObjList.Count then
   begin
-  TObj(FObjList[AIndex]).Free;
-  FObjList.Delete(AIndex);
+    TObj(FObjList[AIndex]).Free;
+    FObjList.Delete(AIndex);
   end;
 end;
 
@@ -126,7 +130,6 @@ begin
   if AIndex < FObjList.Count then
     Result := FObjList[AIndex]
 end;
-
 
 function TObjMgr.ObjectCount: Integer;
 begin

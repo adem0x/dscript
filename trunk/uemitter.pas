@@ -17,8 +17,10 @@ type
 
     function EmitNop(): integer;
     function DeleteCode(ALine: integer): Boolean;
-    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1: TEmitInts); overload;
-    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1, _p2: TEmitInts); overload;
+    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts;
+      _p1: TEmitInts); overload;
+    procedure ModifiyCode(ALine: integer; atoken: _TEmitInts;
+      _p1, _p2: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1: TEmitInts); overload;
     procedure EmitCode(atoken: _TEmitInts; _p1, _p2: TEmitInts); overload;
@@ -44,8 +46,8 @@ begin
     Result := PrintInts[aInts];
 end;
 
-procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts; _p1,
-  _p2: TEmitInts);
+procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
+  _p1, _p2: TEmitInts);
 var
   Param: TEmitInts;
   P: Pointer;
@@ -64,8 +66,7 @@ begin
     EmitFunCoder.Delete(ALine);
   end;
   Dec(CodeLine);
-  EmitCode(atoken, _p1, _p2
-  , Param, ALine);
+  EmitCode(atoken, _p1, _p2, Param, ALine);
 end;
 
 function TEmitter.str2Ints(aInts: string): _TEmitInts;

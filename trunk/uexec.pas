@@ -77,7 +77,7 @@ procedure TExec.CoreExec();
 var
   CodeBuf: PAnsiChar;
   Ints: _TEmitInts;
-  _p1, _p2, _p3: PValue;
+  _p1, _p2, _p3, _pt: PValue;
   __p1, __p2, __p3: TValue;
   neg: Integer;
   ER, BR: Boolean;
@@ -95,15 +95,15 @@ var
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
       pobject:
-      begin
-        Value._Int := PInteger(P)^;
-        Inc(P, SizeOf(Integer));
-      end;
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+        end;
       ivalue:
-      begin
-        Value._Int := PInteger(P)^;
-        Inc(P, SizeOf(Integer));
-      end;
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+        end;
       pint, pfunc:
         begin
           Value._Int := PInteger(P)^;
@@ -177,37 +177,44 @@ begin
     Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
       igetobjv:
-      begin
-        GetValue(CodeBuf, _p1);//obj
-        GetValue(CodeBuf, _p2);//objvalue
-        GetValue(CodeBuf, _p3);//copyvalue
-        _p3^ := TObj(_p1._Object).FindAValue(_p2._Int)^;
-      end;
+        begin
+          GetValue(CodeBuf, _p1); // obj
+          GetValue(CodeBuf, _p2); // objvalue
+          GetValue(CodeBuf, _p3); // copyvalue
+          _pt := TObj(_p1._Object).FindAValue(_p2._Int);
+          if _pt <> nil then
+            _p3^ := _pt^
+          else
+            // 再建立一个物体的属性表，修改下
+            RunError('ObjectValue ' + IntToHex(Integer(_p1._Object), 8) +
+              ' is''not exist');
+
+        end;
       iputobjv:
-      begin
-        GetValue(CodeBuf, _p1);//obj
-        GetValue(CodeBuf, _p2);//objvalue
-        GetValue(CodeBuf, _p3);//copyvalue
-        _p1._Object := FObjMgr.GetAObject(_p1._Int);
-        TObj(_p1._Object).AddAValue(_p2._Int, _p3^)
-      end;
+        begin
+          GetValue(CodeBuf, _p1); // obj
+          GetValue(CodeBuf, _p2); // objvalue
+          GetValue(CodeBuf, _p3); // copyvalue
+          // _p1._Object := FObjMgr.GetAObject(_p1._Int);
+          TObj(_p1._Object).AddAValue(_p2._Int, _p3^)
+        end;
       inewobj:
-      begin
-        GetValue(CodeBuf, _p1);
-        if _p1._Int >= FCopyObjMgr.ObjectCount then
-          Obj:= TObj.Create(FCopyObjMgr);
-      end;
+        begin
+          GetValue(CodeBuf, _p1);
+          if _p1._Int >= FCopyObjMgr.ObjectCount then
+            Obj := TObj.Create(FCopyObjMgr);
+        end;
       icopyobj:
-      begin
-        GetValue(CodeBuf, _p1);//obj
-        GetValue(CodeBuf, _p2);//copyvalue
-        Obj:= TObj.Create(FObjMgr);
-        _p1._Object := FCopyObjMgr.GetAObject(_p1._Int);
-        TObj(_p1._Object).CopyTo(Obj);
-        _p2._Type := pobject;
-        _p2._Int := _p1._Int;
-        _p2._Object := Obj;
-      end;
+        begin
+          GetValue(CodeBuf, _p1); // obj
+          GetValue(CodeBuf, _p2); // copyvalue
+          Obj := TObj.Create(FObjMgr);
+          _p1._Object := FCopyObjMgr.GetAObject(_p1._Int);
+          TObj(_p1._Object).CopyTo(Obj);
+          _p2._Type := pobject;
+          _p2._Int := _p1._Int;
+          _p2._Object := Obj;
+        end;
       inop:
         begin
         end;
@@ -314,6 +321,13 @@ begin
                 _p2._Type := pstring;
                 _p2._Int := _p1._Int;
                 _p2._String := _p1._String;
+              end;
+            pobject:
+              begin
+                _p2._Type := pobject;
+                _p2._Int := _p1._Int;
+                _p2._String := _p1._String;
+                _p2._Object := _p1._Object;
               end;
           end;
         end;
