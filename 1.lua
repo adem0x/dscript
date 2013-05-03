@@ -1,5 +1,8 @@
-j = 1;
-for i = j, 10, 2 do
-write i
+f = nil;
+for j = 1, 10 do
+	f = {i = j; next = f};
 end;
-write 'end'
+for j = 1, 10 do
+	print(f.i);
+f = f.next;
+end;

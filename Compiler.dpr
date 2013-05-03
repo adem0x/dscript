@@ -26,19 +26,18 @@ var
 begin
   v := gExec.Stack[gExec.ESP];
   if v._Type = pint then
-  Writeln(v._int)
-  else
-  if v._Type = pstring then
-  Writeln(v._String)
+    Writeln(v._int)
+  else if v._Type = pstring then
+    Writeln(v._String)
 end;
 
 begin
 
-  // with TStringList.Create do
-  // begin
-  // LoadFromFile('1.lua');
-  // Source := PAnsiChar(AnsiString(GetText));
-  // end;
+  with TStringList.Create do
+  begin
+    LoadFromFile('1.lua');
+    Source := PAnsiChar(AnsiString(GetText));
+  end;
   // Source := 'c= 4*3 / 2; write c';
   // Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c @';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c @';
@@ -48,12 +47,12 @@ begin
   // 'function add2(a,b) d= add(a, b) * 2; return d end;'+
   // 'f = add(add(1,2), 3); write f';
   // Source := 'mywrite(100)';
-  // Source := 'write 4 % 2 @' ;
+  // Source := 'f = {i}; f.i = 100; write f.i;' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
-//   Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
-  Source := 'for j = 1, 10 do f = {i = j; next = f}; end;'
-  +
-  'for j = 1, 10 do write f.i; f = f.next; end; ' ;
+  // Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
+  // Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
+  // +
+  // 'for j = 1, 10 do write f.i; f = f.next; end; ' ;
   // Source := 'write ''end''';
   try
     gPropTable := TPropTable.Create;
@@ -65,7 +64,7 @@ begin
     Writeln;
     Writeln('parser over!');
     Writeln('exec start!');
-    gExec.RegisterFunction('mywrite', @MyWrite);
+    gExec.RegisterFunction('print', @MyWrite);
     gExec.Exec;
     Writeln('exec end!');
   except

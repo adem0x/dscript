@@ -38,7 +38,7 @@ type
     constructor Create;
     function GetObjectAddr(AObjectName: string): Integer;
     function FindObjectAddr(AObjectName: string): Integer;
-    function FindValueAddr(AObjectId: Integer;AValueName: string): Integer;
+    function FindValueAddr(AObjectId: Integer; AValueName: string): Integer;
     function GetValueAddr(AValeName: string): Integer;
     function FindAddr(varname: string): Integer;
     function GetFuncAddr(varname: string; EntryAddr: Integer): Integer;
@@ -286,7 +286,7 @@ var
   I: Integer;
 begin
   Result := -1;
-  for I:= 0 to Length(FObjectPropTable) - 1 do
+  for I := 0 to Length(FObjectPropTable) - 1 do
   begin
     if FObjectPropTable[I] = AObjectName then
     begin
@@ -296,13 +296,15 @@ begin
   end;
 end;
 
-function TPropTable.FindValueAddr(AObjectId: Integer;AValueName: string): Integer;
+function TPropTable.FindValueAddr(AObjectId: Integer;
+  AValueName: string): Integer;
 var
-  I:Integer;
+  I: Integer;
 begin
   Result := -1;
-  if AObjectId >= Length(FObjectValuePropTable) then Exit;
-  for I:= 0 to Length(FObjectValuePropTable[AObjectId]) -1 do
+  if AObjectId >= Length(FObjectValuePropTable) then
+    Exit;
+  for I := 0 to Length(FObjectValuePropTable[AObjectId]) - 1 do
   begin
     if FObjectValuePropTable[AObjectId][I] = AValueName then
     begin
