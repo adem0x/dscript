@@ -184,7 +184,7 @@ end;
 
 procedure TPropTable.ClearValue;
 begin
-  FValueList := TStringList.Create;
+  FValueList.Clear;
   FValueList.Add('999888t')
 end;
 

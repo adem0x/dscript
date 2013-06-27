@@ -36,7 +36,6 @@ type
     Stack: Integer;
     TempVar: Boolean;
     TempVarCount: Integer;
-    AnonyMousFunc: Boolean;
     FFrontList: TList;
     FInWhileStmt: Boolean;
     FBreakList: TList;
@@ -157,7 +156,6 @@ begin
       stmt_var;
     tkfunc:
       begin
-        AnonyMousFunc := False;
         stmt_func;
       end;
     tkreturn:
@@ -262,8 +260,7 @@ begin
           case GetNextToken() of
             tkfunc:
               begin
-                AnonyMousFunc := True;
-                Result := stmt_func;
+                Result := stmt_func();
                 FEmitter.EmitCode(iputobjv,_p4 , _p1, Result);
               end;
           else
@@ -656,8 +653,7 @@ begin
         end;
       tkfunc:
         begin
-          AnonyMousFunc := True;
-          Result := stmt_func;
+          Result := stmt_func(AInts);
         end;
       tkleftbrace:
         begin
@@ -824,23 +820,19 @@ begin
   FEmitter.codeline := FEmitter.funccodeline;
   LineNo := FEmitter.emitnop();
   Match(tkfunc);
-  if not AnonyMousFunc then
+  if not Assigned(AInts) then
   begin
     Match(tkident);
     FPropTable.FuncName := GetToken;
-    I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
-    Result.Ints := pfunc;
-    Result.sInstr := FPropTable.FuncName;
-    Result.iInstr := I;
   end
   else
   begin
-    FPropTable.FuncName := '1AnonyMousFunc' + IntToStr(Stack);
-    I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
-    Result.Ints := pfunc;
-    Result.sInstr := FPropTable.FuncName;
-    Result.iInstr := I;
+    FPropTable.FuncName := AInts.sInstr;
   end;
+  I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
+  Result.Ints := pfunc;
+  Result.sInstr := FPropTable.FuncName;
+  Result.iInstr := I;
   Match(tkleftpart);
   while True do
   begin
