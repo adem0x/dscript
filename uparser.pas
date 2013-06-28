@@ -155,9 +155,7 @@ begin
     tkvar:
       stmt_var;
     tkfunc:
-      begin
         stmt_func;
-      end;
     tkreturn:
       stmt_return;
     tkbreak:
@@ -260,8 +258,8 @@ begin
           case GetNextToken() of
             tkfunc:
               begin
-                Result := stmt_func();
-                FEmitter.EmitCode(iputobjv,_p4 , _p1, Result);
+                Result := stmt_func(@_p1);
+                FEmitter.EmitCode(iputobjv, _p4, _p1, Result);
               end;
           else
             begin
@@ -332,9 +330,10 @@ end;
 
 function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
-  _p1, _p2, _p3, _p4,  _p5: TEmitInts;
+  _p1, _p2, _p3, _p4, _p5: TEmitInts;
   LineNo: Integer;
   EmitObj: Boolean;
+  fp: TFuncProp;
 label L1;
 begin
   EmitObj := False;
@@ -392,8 +391,9 @@ L1:
           begin
             if _p4.Ints = pfuncaddr then
             begin
-              FPropTable.funcproptable[Result.iInstr] :=
-                FPropTable.funcproptable[_p4.iInstr];
+              fp := FPropTable.funcproptable[_p4.iInstr]^;
+              fp.FuncName := Result.sInstr;
+              FPropTable.funcproptable[Result.iInstr] := @fp;
             end;
             FEmitter.EmitCode(imov, _p4, Result);
           end;
@@ -640,11 +640,11 @@ begin
       tkleftpart:
         begin
           stmt_callfunc;
-          Result.Ints := pfunc;
+          Result.Ints := iident;
           Result.iInstr := FPropTable.FindAddr(Result.sInstr);
           if Result.iInstr = 0 then
             Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
-          Result.sInstr := IntToStr(Result.iInstr);
+//          Result.sInstr := IntToStr(Result.iInstr);
           FEmitter.EmitCode(icall, Result);
           Result.Ints := iident;
           Result.sInstr := '1tempvar' + IntToStr(Stack);
@@ -692,6 +692,11 @@ begin
         Result.Ints := iident;
         Result.sInstr := sident;
         Result.iInstr := sident(Result.sInstr);
+        if FPropTable.IsAFunc(Result.sInstr) then
+        begin
+          Result.Ints := pfuncaddr;
+          Result.iInstr := FPropTable.GetFuncAddr(Result.sInstr)
+        end;
       end;
     tkleftpart:
       begin
@@ -830,7 +835,7 @@ begin
     FPropTable.FuncName := AInts.sInstr;
   end;
   I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
-  Result.Ints := pfunc;
+  Result.Ints := pfuncaddr;
   Result.sInstr := FPropTable.FuncName;
   Result.iInstr := I;
   Match(tkleftpart);
