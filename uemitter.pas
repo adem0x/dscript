@@ -3,18 +3,18 @@ unit uemitter;
 interface
 
 uses
-  uconst, SysUtils, ulex, Classes, uexec, uproptable;
+  uconst, SysUtils, ulex, Classes, uexec, uproptable, uEmitFuncMgr;
 
 type
   TEmitter = class
-
-    EmitCoder, EmitFunCoder: TList;
-    CodeLine: integer;
+  private
+    function GetEmitFuncState: Boolean;
+  public
     FuncCodeLine: integer;
     FExec: TExec;
     FPropTable: TPropTable;
     m: TMemoryStream;
-
+    EmitFuncMgr: TEmitFuncMgr;
     function EmitNop(): integer;
     function DeleteCode(ALine: integer): Boolean;
     procedure ModifiyCode(ALine: integer; atoken: _TEmitInts;
@@ -30,6 +30,9 @@ type
     function str2Ints(aInts: string): _TEmitInts;
     procedure ToExec;
     constructor Create(AExec: TExec; APropTable: TPropTable);
+    function GetCodeLine: Integer;
+    property CodeLine:Integer  read GetCodeLine;
+    property EmitFunc: Boolean  read GetEmitFuncState;
   end;
 
 var
@@ -44,29 +47,6 @@ function TEmitter.Ints2str(aInts: _TEmitInts): string;
 begin
   if aInts in [iread .. itheend] then
     Result := PrintInts[aInts];
-end;
-
-procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
-  _p1, _p2: TEmitInts);
-var
-  Param: TEmitInts;
-  P: Pointer;
-begin
-  Param.Ints := inone;
-  if not FPropTable.EmitFunc then
-  begin
-    P := EmitCoder[ALine];
-    FreeMem(P);
-    EmitCoder.Delete(ALine);
-  end
-  else
-  begin
-    P := EmitFunCoder[ALine];
-    FreeMem(P);
-    EmitFunCoder.Delete(ALine);
-  end;
-  Dec(CodeLine);
-  EmitCode(atoken, _p1, _p2, Param, ALine);
 end;
 
 function TEmitter.str2Ints(aInts: string): _TEmitInts;
@@ -89,42 +69,26 @@ var
   I: integer;
 begin
   FExec.Code.Clear;
-  for I := 0 to EmitFunCoder.Count - 1 do
-    FExec.Code.Add(EmitFunCoder[I]);
-  for I := 0 to EmitCoder.Count - 1 do
-    FExec.Code.Add(EmitCoder[I]);
+  FExec.IP := EmitFuncMgr.SaveCodeToList(FExec.Code);
+  FExec.IPEnd := FExec.Code.Count;
   if Assigned(FPropTable.StrList) then
     FExec.StringList.AddStrings(FPropTable.StrList);
-  FExec.IP := EmitFunCoder.Count;
-  FExec.IPEnd := FExec.Code.Count;
-  EmitFunCoder.Clear;
-  EmitCoder.Clear;
-  // FPropTable.StrList.Clear;
-  // FPropTable.VarnameList.Clear;
-  // FPropTable.TempVarnameList.Clear;
-  // FPropTable.FuncnameList.Clear;
-  // FPropTable.FuncParamnameList.Clear;
 end;
 
 function TEmitter.EmitNop(): integer;
 begin
-  if not Assigned(EmitCoder) then
-    EmitCoder := TList.Create;
-  if not Assigned(EmitFunCoder) then
-    EmitFunCoder := TList.Create;
-  Result := CodeLine;
-  if not FPropTable.EmitFunc then
-  begin
-    EmitCode(inop);
-    // EmitCoder.Add(nil);
-  end
-  else
-  begin
-    EmitCode(inop);
-    // EmitFunCoder.Add(nil);
-  end;
+  Result := EmitFuncMgr.CurrentFunc.CodeLineCount;
+  EmitCode(inop);
+end;
 
-  // Inc(CodeLine);
+procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
+  _p1, _p2: TEmitInts);
+var
+  Param: TEmitInts;
+  P: Pointer;
+begin
+  Param.Ints := inone;
+  EmitCode(atoken, _p1, _p2, Param, ALine);
 end;
 
 procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
@@ -134,19 +98,6 @@ var
   P: Pointer;
 begin
   Param.Ints := inone;
-  if not FPropTable.EmitFunc then
-  begin
-    P := EmitCoder[ALine];
-    FreeMem(P);
-    EmitCoder.Delete(ALine);
-  end
-  else
-  begin
-    P := EmitFunCoder[ALine];
-    FreeMem(P);
-    EmitFunCoder.Delete(ALine);
-  end;
-  Dec(CodeLine);
   EmitCode(atoken, _p1, Param, Param, ALine);
 end;
 
@@ -155,28 +106,12 @@ begin
   FExec := AExec;
   FPropTable := APropTable;
   m := TMemoryStream.Create;
+  EmitFuncMgr := TEmitFuncMgr.Create(FPropTable);
 end;
 
 function TEmitter.DeleteCode(ALine: integer): Boolean;
 begin
-  Result := True;
-  if not FPropTable.EmitFunc then
-  begin
-    if ALine < EmitCoder.Count then
-    begin
-      FreeMem(EmitCoder[ALine]);
-      EmitCoder.Delete(ALine);
-    end;
-  end
-  else
-  begin
-    if ALine < EmitFunCoder.Count then
-    begin
-      FreeMem(EmitFunCoder[ALine]);
-      EmitFunCoder.Delete(ALine);
-    end;
-  end;
-  Dec(CodeLine);
+  Result := EmitFuncMgr.DeleteCode(ALine);
 end;
 
 procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
@@ -262,10 +197,6 @@ begin
   else
     Write(LineNo, ': ', Ints2str(atoken), ' ');
 {$ENDIF}
-  if not Assigned(EmitCoder) then
-    EmitCoder := TList.Create;
-  if not Assigned(EmitFunCoder) then
-    EmitFunCoder := TList.Create;
   m.Clear;
   m.Write(atoken, SizeOf(_TEmitInts));
   emitparam(_p1);
@@ -274,21 +205,10 @@ begin
   Writeln;
   GetMem(buf, m.Size);
   Move(m.Memory^, buf^, m.Size);
-  if not FPropTable.EmitFunc then
-  begin
-    if LineNo = -1 then
-      EmitCoder.Add(buf)
-    else
-      EmitCoder.Insert(LineNo, buf);
-  end
+  if LineNo = -1 then
+    EmitFuncMgr.AddACode(buf)
   else
-  begin
-    if LineNo = -1 then
-      EmitFunCoder.Add(buf)
-    else
-      EmitFunCoder.Insert(LineNo, buf);
-  end;
-  Inc(CodeLine);
+    EmitFuncMgr.ModifiyCode(LineNo, buf)
 end;
 
 procedure TEmitter.EmitCode(atoken: _TEmitInts);
@@ -313,6 +233,16 @@ var
 begin
   Param.Ints := inone;
   EmitCode(atoken, _p1, _p2, Param);
+end;
+
+function TEmitter.GetCodeLine: Integer;
+begin
+  Result := EmitFuncMgr.CurrentFunc.CodeLineCount;
+end;
+
+function TEmitter.GetEmitFuncState: Boolean;
+begin
+  Result := EmitFuncMgr.CurrentFunc.FuncName <> '1Main'
 end;
 
 end.

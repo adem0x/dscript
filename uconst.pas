@@ -26,6 +26,7 @@ type
     _Boolean: boolean;
     _Object: Pointer;
     _Id: string;
+    _i: Integer;
   end;
 
 var

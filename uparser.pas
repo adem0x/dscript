@@ -389,12 +389,12 @@ L1:
           end
           else
           begin
-            if _p4.Ints = pfuncaddr then
-            begin
-              fp := FPropTable.funcproptable[_p4.iInstr]^;
-              fp.FuncName := Result.sInstr;
-              FPropTable.funcproptable[Result.iInstr] := @fp;
-            end;
+//            if _p4.Ints = pfuncaddr then
+//            begin
+//              fp := FPropTable.funcproptable[_p4.iInstr]^;
+//              fp.FuncName := Result.sInstr;
+//              FPropTable.funcproptable[Result.iInstr] := @fp;
+//            end;
             FEmitter.EmitCode(imov, _p4, Result);
           end;
         end
@@ -813,31 +813,29 @@ var
   _p1: TEmitInts;
   LineNo, lineno2: Integer;
   m_FuncProp: PFuncProp;
+  S: string;
 begin
-  if FPropTable.EmitFunc then
+  if FEmitter.EmitFunc then
     ParserError('do not support nest func');
   FFrontList.Clear;
   FPropTable.ClearTempVar;
   TempVarCount := 0;
   Inc(Stack);
-  FPropTable.EmitFunc := True;
-  CurrentCodeLine := FEmitter.codeline;
-  FEmitter.codeline := FEmitter.funccodeline;
-  LineNo := FEmitter.emitnop();
   Match(tkfunc);
   if not Assigned(AInts) then
   begin
     Match(tkident);
-    FPropTable.FuncName := GetToken;
+    S := GetToken;
   end
   else
   begin
-    FPropTable.FuncName := AInts.sInstr;
+    S := AInts.sInstr;
   end;
-  I := FPropTable.getfuncaddr(FPropTable.FuncName, FEmitter.codeline);
+  FEmitter.EmitFuncMgr.StartEmitFunc(S);
+  LineNo := FEmitter.emitnop();
   Result.Ints := pfuncaddr;
-  Result.sInstr := FPropTable.FuncName;
-  Result.iInstr := I;
+  Result.sInstr := FEmitter.EmitFuncMgr.CurrentFunc.FuncName;
+  Result.iInstr := FEmitter.EmitFuncMgr.FuncCount;
   Match(tkleftpart);
   while True do
   begin
@@ -873,8 +871,6 @@ begin
     // 删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
     I := FPropTable.getfuncaddr(FPropTable.FuncName);
-    m_FuncProp := FPropTable.funcproptable[I];
-    Dec(m_FuncProp.EntryAddr)
   end
   else
   begin
@@ -887,10 +883,17 @@ begin
     FEmitter.EmitCode(iebp, _p1);
   end;
   FEmitter.EmitCode(iret);
-  FEmitter.funccodeline := FEmitter.codeline - CurrentCodeLine;
-  FEmitter.codeline := CurrentCodeLine;
-  FPropTable.EmitFunc := False;
-  FPropTable.FuncName := '';
+  FEmitter.EmitFuncMgr.EndEmitFunc;
+  {
+  AInts = nil 是 类似 function xxx() end; 这种形式的函数
+  }
+  if AInts = nil then
+  begin
+    _p1.Ints := iident;
+    _p1.sInstr := Result.sInstr;
+    _p1.iInstr := FPropTable.GetStackAddr(_p1.sInstr);
+    FEmitter.EmitCode(imov, Result, _p1);
+  end;
   Dec(Stack);
 end;
 
@@ -1001,7 +1004,7 @@ end;
 
 function TParser.stmt_var(AInts: PEmitInts): TEmitInts;
 begin
-  if not FPropTable.EmitFunc then
+  if not FEmitter.EmitFunc then
     ParserError('var must be def in function');
   Match(tkvar);
   TempVar := True;
@@ -1011,7 +1014,7 @@ end;
 
 function TParser.stmt_return(AInts: PEmitInts): TEmitInts;
 begin
-  if not FPropTable.EmitFunc then
+  if not FEmitter.EmitFunc then
     ParserError('return must be def in function');
   Match(tkreturn);
   Result := sExp;
