@@ -90,6 +90,7 @@ var
   var
     I: Integer;
     T: _TEmitInts;
+    m_fp: TFuncProp;
   begin
     Value._Type := _PEmitInts(P)^;
     Inc(P, SizeOf(_TEmitInts));
@@ -134,17 +135,21 @@ var
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
-          if I > 0 then
-          begin
-            Value := @globlevar[I];
-            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
-          end
-          else
-          begin
-            Value := @tempvar[EBP - I];
-            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
-          end;
+//          if I > 0 then
+//          begin
+//            m_fp := FPropTable.funcproptable[I];
+//            value._Int := m_fp.EntryAddr
+//            Value._iident :=
+//            Value := @globlevar[I];
+//            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
+//          end
+//          else
+//          begin
+//            Value := @tempvar[EBP - I];
+//            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
+//          end;
           Value._Type := pfuncaddr;
+          Value._Int := I;
         end;
     end;
   end;
@@ -307,8 +312,9 @@ begin
             pfuncaddr:
               begin
                 _p2._Type := pfuncaddr;
-                FPropTable.funcproptable[_p2._Int] := FPropTable.funcproptable
-                  [_p1._Int];
+                _p2._Int := _p1._Int;
+//                FPropTable.funcproptable[_p2._Int] := FPropTable.funcproptable
+//                  [_p1._Int];
               end;
             pint:
               begin

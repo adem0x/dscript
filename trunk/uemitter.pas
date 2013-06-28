@@ -204,6 +204,9 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit}
+            if _p.Ints = pfunc then
+            Write('(func)',_p.iInstr, ' ')
+            else
             Write(_p.iInstr, ' ');
 {$ENDIF}
           end;
@@ -223,7 +226,7 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit} Write('(funcaddr)', _p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         pobject:
           begin

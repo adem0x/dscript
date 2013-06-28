@@ -36,6 +36,7 @@ type
     ObjectName: string;
     ObjectId: Integer;
     constructor Create;
+    function IsAFunc(AVarName: string): Boolean;
     function GetObjectAddr(AObjectName: string): Integer;
     function FindObjectAddr(AObjectName: string): Integer;
     function FindValueAddr(AObjectId: Integer; AValueName: string): Integer;
@@ -216,7 +217,7 @@ end;
 
 procedure TPropTable.SetFuncPropTable(Index: Integer; const Value: PFuncProp);
 begin
-  if Index < 0 then
+  if Index <= 0 then
     Exit;
   if index >= FFuncPropCount then
   begin
@@ -312,6 +313,11 @@ begin
       Break;
     end;
   end;
+end;
+
+function TPropTable.IsAFunc(AVarName: string): Boolean;
+begin
+  Result :=  FuncNameList.IndexOf(AVarName) > -1;
 end;
 
 end.
