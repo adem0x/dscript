@@ -30,7 +30,6 @@ type
   public
     StrList, VarnameList, TempVarnameList, FuncNameList, FObjectList,
       FValueList: TStringList;
-    EmitFunc: Boolean;
     FuncName: string;
     EmitObject: Boolean;
     ObjectName: string;
@@ -206,24 +205,23 @@ begin
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
-begin
-  if Index > FFuncPropCount then
+begin              
+  if Index >= FFuncPropCount then
     Result := nil
   else
   begin
-    Result := @FFuncPropTable[index - 1]
+    Result := @FFuncPropTable[index]
   end;
 end;
 
 procedure TPropTable.SetFuncPropTable(Index: Integer; const Value: PFuncProp);
 begin
-  if Index <= 0 then
-    Exit;
+  if Index < 0 then Exit;
   if index >= FFuncPropCount then
   begin
-    SetLength(FFuncPropTable, index);
-    FFuncPropCount := Index;
-    FFuncPropTable[index - 1] := Value^;
+    SetLength(FFuncPropTable, index + 1);
+    FFuncPropCount := Index + 1;
+    FFuncPropTable[index] := Value^;
   end;
 end;
 

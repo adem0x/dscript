@@ -130,24 +130,12 @@ var
             Value := @tempvar[EBP - I];
             Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
           end;
+          Value._i := I;
         end;
       pfuncaddr:
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
-//          if I > 0 then
-//          begin
-//            m_fp := FPropTable.funcproptable[I];
-//            value._Int := m_fp.EntryAddr
-//            Value._iident :=
-//            Value := @globlevar[I];
-//            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
-//          end
-//          else
-//          begin
-//            Value := @tempvar[EBP - I];
-//            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
-//          end;
           Value._Type := pfuncaddr;
           Value._Int := I;
         end;
@@ -313,8 +301,8 @@ begin
               begin
                 _p2._Type := pfuncaddr;
                 _p2._Int := _p1._Int;
-//                FPropTable.funcproptable[_p2._Int] := FPropTable.funcproptable
-//                  [_p1._Int];
+                FPropTable.funcproptable[_p2._i] := FPropTable.funcproptable
+                  [_p1._Int];
               end;
             pint:
               begin
