@@ -13,8 +13,8 @@ type
     globlevar: array [0 .. 1024 * 1024] of TValue;
     tempvar: array [0 .. 1024 * 1024] of TValue;
     FStack: array [0 .. 1024 * 1024] of TValue;
-    CallStack, VarX: array [0 .. 1024] of Integer;
-    FESP, EBP, CallESP, VarXSP: Integer;
+    CallStack: array [0 .. 1024] of Integer;
+    FESP, EBP, CallESP: Integer;
     FStringList: TStringList;
     FCode: TList;
     FCodeCount: Integer;
@@ -39,6 +39,7 @@ type
     function RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
     property Stack[Index: Integer]: PValue read GetStack write SetStack;
     property ESP: Integer read FESP;
+    procedure PrintCode;
   end;
 
 implementation
@@ -84,7 +85,6 @@ var
   S: string;
   I: Integer;
   m_FuncProp: PFuncProp;
-  VarI: Integer;
   Obj: TObj;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
@@ -128,7 +128,7 @@ var
           else
           begin
             Value := @tempvar[EBP - I];
-            Value._Id := FPropTable.GetFuncVarPropTable(VarI, -I);
+            Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
           end;
           Value._i := I;
         end;
@@ -155,8 +155,6 @@ var
   end;
 
 begin
-  VarI := 0;
-  VarXSP := -1;
   ER := False;
   BR := False;
   EBP := 0;
@@ -229,9 +227,7 @@ begin
         begin
           IP := CallStack[CallESP];
           Dec(CallESP);
-
-          VarI := VarX[VarXSP];
-          Dec(VarXSP);
+          Dec(EBP);
           Continue;
         end;
       iebp:
@@ -242,6 +238,7 @@ begin
       icall:
         begin
           Inc(CallESP);
+          Inc(EBP); //空出来放返回值的空间
           CallStack[CallESP] := IP + 1;
           GetValue(CodeBuf, _p1);
           m_FuncProp := FPropTable.funcproptable[_p1._Int];
@@ -261,9 +258,6 @@ begin
             end;
           end;
           IP := m_FuncProp.EntryAddr;
-          Inc(VarXSP);
-          VarX[VarXSP] := VarI;
-          VarI := _p1._Int;
           Continue;
         end;
       iread:
@@ -556,6 +550,129 @@ end;
 procedure TExec.SetStack(Index: Integer; const Value: PValue);
 begin
   FStack[Index] := Value^
+end;
+
+procedure TExec.PrintCode;
+var
+  i: Integer;
+  procedure GetValue(var P: PAnsiChar);
+  var
+    I: Integer;
+    T: _TEmitInts;
+    m_fp: TFuncProp;
+    Value: TValue;
+  begin
+    Value._Type := _PEmitInts(P)^;
+    Inc(P, SizeOf(_TEmitInts));
+    case Value._Type of
+      pobject:
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          Write(Value._Int);
+        end;
+      ivalue:
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          Write(Value._Int);
+        end;
+      pint, pfunc:
+        begin
+          Value._Int := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          Write(Value._Int);
+        end;
+      pstring:
+        begin
+          Value._Int := PInteger(P)^;
+          Value._String := StringList[Value._Int];
+          Inc(P, SizeOf(Integer));
+          Write('(',Value._String,')', Value._Int);
+        end;
+      iident:
+        begin
+          I := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          if I > 0 then
+          begin
+            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
+          end
+          else
+          begin
+            Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
+          end;
+          Value._i := I;
+         Write('(',Value._Id,')', Value._Int);
+        end;
+      pfuncaddr:
+        begin
+          I := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          Value._Type := pfuncaddr;
+          Value._Int := I;
+          Write(Value._Int);
+        end;
+    end;
+  end;
+var
+  CodeBuf: PAnsiChar;
+  Ints: _TEmitInts;
+begin
+  for i:= 0 to Code.Count - 1 do
+  begin
+    CodeBuf := Code[i];
+    Ints := _PEmitInts(CodeBuf)^;
+    Inc(CodeBuf, SizeOf(_TEmitInts));
+    Write(I,' ' ,PrintInts[Ints],' ');
+    case Ints of
+      igetobjv,
+      iputobjv,
+      isub,
+      iadd,
+      imul,
+      idiv,
+      imod:
+        begin
+          GetValue(CodeBuf); // obj
+          Write('  ');
+          GetValue(CodeBuf); // objvalue
+          Write('  ');
+          GetValue(CodeBuf); // copyvalue
+          Writeln;
+        end;
+      icopyobj,
+      imov,
+      icmp:
+        begin
+          GetValue(CodeBuf); // obj
+          Write(' ');
+          GetValue(CodeBuf); // copyvalue
+          Writeln;
+        end;
+      inewobj,
+      ipush,
+      ipop,
+      iebp,
+      icall,
+      iread,
+      iwrite,
+      ijmp,
+      ije,
+      ijne,
+      ijse,
+      ijs,
+      ijbe,
+      ijb:
+        begin
+          GetValue(CodeBuf);
+          Writeln('');
+        end;
+      inop:Writeln;
+      iret:Writeln;
+      ihalt:Writeln;
+    end;
+  end;
 end;
 
 end.

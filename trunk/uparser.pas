@@ -536,7 +536,7 @@ end;
 
 function TParser.Match(AToken: Token): Boolean;
 begin
-  Result := FLex.Match(AToken)
+  Result := FLex.Match(AToken);
 end;
 
 function TParser.asop(AInts: PEmitInts): TEmitInts;
@@ -866,6 +866,7 @@ begin
     FEmitter.modifiycode(lineno2, ijmp, _p1);
   end;
   FFrontList.Clear;
+
   if TempVarCount = 0 then
   begin
     // 删除1条指令，入口地址要修改
@@ -911,71 +912,13 @@ begin
     case GetNextToken() of
       tkrightpart:
         Break;
-      tknum:
-        begin
-          Result.Ints := pint;
-          Result.sInstr := num;
-          Result.iInstr := StrToInt(Result.sInstr);
-          PushList[PushI] := Result;
-          Inc(PushI);
-        end;
-      tkstring:
-        begin
-          Result.Ints := pstring;
-          Result.sInstr := sgetstring;
-          Result.iInstr := FPropTable.FindAddr(Result.sInstr);
-          PushList[PushI] := Result;
-          Inc(PushI);
-        end;
-      tkident:
-        begin
-          Result.Ints := iident;
-          Result.sInstr := sident;
-          Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
-          PushList[PushI] := Result;
-          Inc(PushI);
-        end;
       tkcomma:
         Match(tkcomma);
-      tkleftpart:
-        begin
-          stmt_callfunc;
-          Result.Ints := pfunc;
-          Result.iInstr := FPropTable.FindAddr(Result.sInstr);
-          if Result.iInstr = 0 then
-            Result.iInstr := FPropTable.getfuncaddr(Result.sInstr);
-          Result.sInstr := IntToStr(Result.iInstr);
-          FEmitter.EmitCode(icall, Result);
-          Result.Ints := iident;
-          Result.sInstr := '1tempvar' + IntToStr(Stack);
-          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
-          FEmitter.EmitCode(ipop, Result);
-          if PushI <> 1 then
-            ParserError('PushI Error');
-          PushList[0] := Result;
-        end;
-      tkdot:
-        begin
-          Match(tkdot);
-          Match(tkident);
-          _p1.Ints := pint;
-          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
-          if _p1.iInstr = -1 then
-            ParserError(' ''' + _p1.sInstr + ''' is not a object');
-          _p2.sInstr := GetToken();
-          _p2.Ints := pint;
-          _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
-          if _p2.iInstr = -1 then
-            ParserError('Object ''' + _p1.sInstr + ''' do not have a property '
-              + _p2.sInstr);
-          _p3 := Result;
-          Result.Ints := iident;
-          Result.sInstr := '1tempvar' + IntToStr(Stack);
-          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
-          FEmitter.EmitCode(igetobjv, _p3, _p2, Result);
-          PushList[PushI - 1] := Result;
-        end;
-    end;
+      else
+        Result := sExp();
+        PushList[PushI] := Result;
+        Inc(PushI);
+      end
   end;
   for I := PushI - 1 downto 0 do
     FEmitter.EmitCode(ipush, PushList[I]);
