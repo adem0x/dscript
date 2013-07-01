@@ -1,5 +1,20 @@
 
-function add(a, b)
-return a+ b;
-end;
-write add(1, 2)
+for j = 1, 10 do f = {j = j}; end;
+function quicksort(m,n)
+if n<=m then return; end;
+i = m-1;
+j = n;
+v = a[n];
+while true do
+ while a[i] < v do i = i + 1; end;
+ while a[j] > v do j = j - 1; end;
+ if i>= j then break;
+ x = a[i];
+ a[i] = a[j];
+ a[j] = x;
+ end;
+ x = a[i];
+ a[i] = a[n]
+ a[n] = x;
+ quicksort(m,j);
+ quicksort(i + 1, n)

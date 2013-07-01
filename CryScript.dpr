@@ -12,7 +12,8 @@ uses
   uexec in 'uexec.pas',
   uproptable in 'uproptable.pas',
   uobjmgr in 'uobjmgr.pas',
-  uEmitFuncMgr in 'uEmitFuncMgr.pas';
+  uEmitFuncMgr in 'uEmitFuncMgr.pas',
+  uOptimizer in 'uOptimizer.pas';
 
 var
   Source: PAnsiChar;
@@ -33,21 +34,21 @@ begin
 end;
 
 begin
-
-  // with TStringList.Create do
-  // begin
-  // LoadFromFile('test\1.lua');
-  // Source := PAnsiChar(AnsiString(GetText));
-  // end;
+//
+//   with TStringList.Create do
+//   begin
+//   LoadFromFile('test\1.lua');
+//   Source := PAnsiChar(AnsiString(GetText));
+//   end;
 
 //  Source := 'function add(a, b) return a+ b; end; add2 = add; write add2(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
   // Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
   // Source := 'x = ''100''; y=x + 10; write y ';
-   Source := 'add = function(a,b)  var c= a + b; return c end;' +
-   'function add2(a,b) d= add(a, b) * 2; return d end;'+
-   'f = add(add2(5,2), 3); write f';
+//   Source := 'add = function(a,b)  var c= a + b; return c end;' +
+//   'function add2(a,b) d= add(a, b) * 2; return d end;'+
+//   'f = add(add2(5,2), 3); write f';
 //   Source := 'function add2(c, d) return add(c,d) end;' +
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
@@ -64,6 +65,11 @@ begin
 //   Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
 //   +
 //   'for j = 1, 10 do write f.i; f = f.next; end; ' ;
+//无脑支持forward，aha，原理太简单了add2是个全局变量。。。return的时候分配地址，定义的时候赋值
+//  Source := 'function add(a,b)  return add2(2)  end;   function add2(a) return a * 2 end  i = add(1, 2); write i';
+//  Source := 'function rec(a) if a > 1 then return rec(a - 1 ) else return 1 end; end; write rec(10)';
+//  Source :='f = {};for j = 1, 10 do f[j] = j; end; write f[1]';
+  Source :='f = {i = 10}; write f.i;';
   try
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);

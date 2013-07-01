@@ -11,8 +11,9 @@ type
   TObj = class
   private
     Name: Integer;
-    FValues: array of TValue;
-    FValuesCount: Integer;
+    FValues, FValues2: array of TValue;
+    FValuesCount, FValuesCount2: Integer;
+
     FId: Integer;
   public
     constructor Create(AObjMgr: TObjMgr);
@@ -41,13 +42,26 @@ implementation
 
 function TObj.AddAValue(AIndex: Integer; AValue: TValue): Boolean;
 begin
-  if AIndex >= FValuesCount then
-  begin
-    FValuesCount := AIndex + 1;
-    SetLength(FValues, FValuesCount);
-  end;
-  FValues[AIndex] := AValue;
   Result := True;
+  if AIndex > 0 then
+  begin
+    if AIndex >= FValuesCount then
+    begin
+      FValuesCount := AIndex + 1;
+      SetLength(FValues, FValuesCount);
+    end;
+    FValues[AIndex] := AValue;
+  end
+  else if AIndex < 0 then
+  begin
+    AIndex := - AIndex;
+    if AIndex >= FValuesCount2 then
+    begin
+      FValuesCount2 := AIndex + 1;
+      SetLength(FValues2, FValuesCount2);
+    end;
+    FValues2[AIndex] := AValue;
+  end else Result := False;
 end;
 
 function TObj.CopyTo(AObj: TObj): Boolean;
@@ -58,9 +72,9 @@ begin
   if not Assigned(AObj) then
     Exit;
   for I := 0 to FValuesCount - 1 do
-  begin
-    AObj.AddAValue(I, FValues[I])
-  end;
+    AObj.AddAValue(I, FValues[I]);
+  for I := 0 to FValuesCount2 - 1 do
+    AObj.AddAValue(- I, FValues2[I]);
   Result := True;
 end;
 
@@ -72,16 +86,30 @@ end;
 
 function TObj.DelAValue(AName: Integer): PValue;
 begin
-  FValues[AName]._Type := inone;
+  if AName > 0 then
+    FValues[AName]._Type := inone
+  else
+    FValues2[- AName]._Type := inone;
   Result := nil;
 end;
 
 function TObj.FindAValue(AName: Integer): PValue;
 begin
-  if AName < Length(FValues) then
-    Result := @FValues[AName]
-  else
-    Result := nil;
+  if AName > 0 then
+  begin
+    if AName < Length(FValues) then
+      Result := @FValues[AName]
+    else
+      Result := nil;
+  end else
+  if AName < 0 then
+  begin
+    AName := - AName;
+    if AName < Length(FValues2) then
+      Result := @FValues2[AName]
+    else
+      Result := nil;
+  end;
 end;
 
 { TObjMgr }

@@ -46,7 +46,7 @@ type
     tkfloatnum, tknum, tkaend, tkdot, tkequal, tkbigop, tksmallop, tkbigequalop,
     tksmallequalop, tkunequal, tkleftpart, tkrightpart, tksemicolon, tkstring,
     tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue,
-    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil);
+    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil, tkleftbracket, tkrightbracket);
 
 var
   KeyWord: array [0 .. 17] of string = (
@@ -104,6 +104,7 @@ type
     function Match(AToken: Token): boolean;
     procedure LexError(s: string);
     property Source: PAnsiChar read FSource write SetSource;
+    function IsKeyWord(AToKen: Token): Integer;
   end;
 
 implementation
@@ -194,12 +195,16 @@ begin
         StateToken := tkleftbrace;
       '}':
         StateToken := tkrightbrace;
+      '[':
+        StateToken := tkleftbracket;
+      ']':
+        StateToken := tkrightbracket;
     else
       LexError('unknow word' + FSource^);
     end;
     if StateToken in [tkequal, tkaddop, tksubop, tkmulop, tkdivop, tkbigop,
       tksmallop, tkleftpart, tkrightpart, tksemicolon, tkcomma, tkmodop, tkdot,
-      tkleftbrace, tkrightbrace] then
+      tkleftbrace, tkrightbrace, tkleftbracket, tkrightbracket] then
     begin
       if LastToken in [tknum, tkfloatnum, tkident, tkstring] then
         StateToken := tkaend;
@@ -321,6 +326,8 @@ begin
 end;
 
 function TLex.Match(AToken: Token): boolean;
+var
+  ret: Integer;
 begin
   if GetNextToken() = AToken then
   begin
@@ -333,8 +340,12 @@ begin
   else
   begin
     Result := False;
+    ret := IsKeyWord(AToken);
+    if  ret <> - 1 then
+      LexError('expect "' + KeyWord[Byte(ret)] + '" but "' + GetToken + '" find.')
+    else
     // {$IFDEF lex}
-    LexError('Match Error:' + CurrentToken);
+      LexError('Match Error:' + CurrentToken);
     // {$ENDIF}
   end;
 end;
@@ -343,6 +354,21 @@ procedure TLex.SetSource(const Value: PAnsiChar);
 begin
   FSource := Value;
   FSourceLen := FSource + Length(FSource);
+end;
+
+function TLex.IsKeyWord(AToKen: Token): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := Low(KeyWord) to High(KeyWord) do
+  begin
+    if AToKen = KeyWordToken[I] then
+    begin
+      Result := I;
+      Break;
+    end;
+  end;
 end;
 
 end.
