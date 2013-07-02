@@ -164,7 +164,7 @@ begin
       stmt_continue;
     tksemicolon:
       Match(tksemicolon);
-    tkhalt:
+    tkhalt, tkend:
       ;
   else
      ParserError('not clear' + GetToken);
@@ -226,7 +226,7 @@ begin
   _p4.Ints := iident;
   _p4.sInstr := '1tempvar' + IntToStr(Stack);
   _p4.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-  FEmitter.EmitCode(inewobj, Result, _p4);
+  FEmitter.EmitCode(inewobj, _p4);
   while True do
   begin
     CurrentToken := GetNextToken();
@@ -382,13 +382,20 @@ L2:
         end
         else
         begin
-//            if _p4.Ints = pfuncaddr then
-//            begin
-//              fp := FPropTable.funcproptable[_p4.iInstr]^;
-//              fp.FuncName := Result.sInstr;
-//              FPropTable.funcproptable[Result.iInstr] := @fp;
-//            end;
-          FEmitter.EmitCode(imov, _p4, Result);
+          if not EmitObj then
+          begin
+            if FPropTable.FindObjectAddr(_p4.sInstr) <> -1 then
+            begin
+              FPropTable.GetObjectAddr(Result.sInstr);
+              FPropTable.CopyObjectValueName(_p4.iInstr, Result.iInstr)
+            end;
+            FEmitter.EmitCode(imov, _p4, Result)
+          end
+          else
+          begin
+            FEmitter.EmitCode(igetobjv, _p5, _p1, Result);
+            FEmitter.EmitCode(imov, _p4, Result)
+          end;
         end;
       end;
     tkleftpart:

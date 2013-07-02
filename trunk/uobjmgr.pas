@@ -10,10 +10,8 @@ type
 
   TObj = class
   private
-    Name: Integer;
     FValues, FValues2: array of TValue;
     FValuesCount, FValuesCount2: Integer;
-
     FId: Integer;
   public
     constructor Create(AObjMgr: TObjMgr);
@@ -95,6 +93,7 @@ end;
 
 function TObj.FindAValue(AName: Integer): PValue;
 begin
+  Result := nil;
   if AName > 0 then
   begin
     if AName >= Length(FValues) then
@@ -131,6 +130,7 @@ end;
 
 function TObjMgr.DeleteAObject(AIndex: Integer): Integer;
 begin
+  Result := -1;
   if AIndex < FObjList.Count then
   begin
     TObj(FObjList[AIndex]).Free;

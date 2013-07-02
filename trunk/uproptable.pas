@@ -35,6 +35,7 @@ type
     ObjectName: string;
     ObjectId: Integer;
     constructor Create;
+    function CopyObjectValueName(AForm, ATo: Integer): Boolean;
     function IsAFunc(AVarName: string): Boolean;
     function GetObjectAddr(AObjectName: string): Integer;
     function FindObjectAddr(AObjectName: string): Integer;
@@ -186,6 +187,15 @@ procedure TPropTable.ClearValue;
 begin
   FValueList.Clear;
   FValueList.Add('999888t')
+end;
+
+function TPropTable.CopyObjectValueName(AForm, ATo: Integer): Boolean;
+var
+  I: Integer;
+begin
+  for I := 0 to Length(FObjectValuePropTable[AForm]) - 1 do
+    SetObjectValuePropTable(ATo, I, GetObjectValuePropTable(AForm, I));
+  Result := True;
 end;
 
 constructor TPropTable.Create;
