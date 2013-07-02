@@ -338,8 +338,8 @@ L2:
         if _p1.iInstr = -1 then
           ParserError(' ''' + _p1.sInstr + ''' is not a object');
         _p2 := factor();
-        _p2.Ints := pint;
-        _p2.iInstr := -_p2.iInstr;
+        if _p2.Ints = pint then
+          _p2.iInstr := -_p2.iInstr;
         Result.Ints := iident;
         Result.sInstr := '1tempvar' + IntToStr(Stack);
         Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
@@ -593,8 +593,8 @@ begin
           if _p1.iInstr = -1 then
             ParserError(' ''' + _p1.sInstr + ''' is not a object');
           _p2 := factor();
-          _p2.Ints := pint;
-          _p2.iInstr := -_p2.iInstr;
+          if _p2.Ints = pint then
+            _p2.iInstr := -_p2.iInstr;
           Result.Ints := iident;
           Result.sInstr := '1tempvar' + IntToStr(Stack);
           Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
