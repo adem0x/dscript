@@ -9,7 +9,7 @@ type
   private
     FFuncName: string;
     FCodeLineCount: Integer;
-    FCode: array of PChar;
+    FCode: array of PAnsiChar;
     FCodeBufSize: Integer;
   public
     constructor Create;

@@ -12,8 +12,8 @@ uses
   uexec in 'uexec.pas',
   uproptable in 'uproptable.pas',
   uobjmgr in 'uobjmgr.pas',
-  uEmitFuncMgr in 'uEmitFuncMgr.pas',
-  uOptimizer in 'uOptimizer.pas';
+  uEmitFuncMgr in 'uEmitFuncMgr.pas';
+//  uOptimizer in 'uOptimizer.pas'; /
 
 var
   Source: PAnsiChar;
@@ -61,7 +61,7 @@ begin
 //   'for j = 1, 10 do write f.i; f = f.next; end; ';
 //  Source := 'f = {add = function(a,b)  return a + b end} i = f.add(9, 2); write i';
 //  Source := 'function add(a,b)  return a + b end; func = add; i = add(1, 2); write i';
-   Source := 'f = {i = 10};write f.i ';
+   Source := 'f = {i = 1}; f.i = 99; h = f; write h.i ';
 //   Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
 //   +
 //   'for j = 1, 10 do write f.i; f = f.next; end; ' ;

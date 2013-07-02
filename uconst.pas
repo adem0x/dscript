@@ -7,7 +7,7 @@ type
   _TEmitInts = (inone, iread, iwrite, imov, ijmp, ijse, ijbe, ijs, ijb, ije,
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,
-    pfuncaddr, iebp, inop, imod, igetobjv, inewobj, icopyobj,
+    pfuncaddr, iebp, inop, imod, igetobjv, inewobj,
     ivalue, itheend);
   PEmitInts = ^TEmitInts;
 
@@ -24,7 +24,6 @@ type
     _Int, _iident: integer;
     _String: string;
     _Boolean: boolean;
-    _Object: Pointer;
     _Value: PValue;
     _Id: string;
     _i: Integer;
@@ -69,7 +68,6 @@ var
     'mod',
     'getobjv',
     'newobj',
-    'copyobj',
     'value',
     'theend'
   );

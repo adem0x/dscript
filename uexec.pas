@@ -22,7 +22,7 @@ type
     FPropTable: TPropTable;
     FIP, FIPEnd: Integer;
     FFunctionList: TStringList;
-    FObjMgr, FCopyObjMgr: TObjMgr;
+    FObjMgr: TObjMgr;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -71,7 +71,6 @@ begin
   FCode := TList.Create;
   FFunctionList := TStringList.Create;
   FObjMgr := TObjMgr.Create;
-  FCopyObjMgr := TObjMgr.Create;
 end;
 
 procedure TExec.CoreExec();
@@ -181,21 +180,16 @@ begin
           end
           else
             // 再建立一个物体的属性表，修改下
-            RunError('ObjectValue 0x' + IntToHex(Integer(_p1._Object), 8) +
+            RunError('ObjectValue ' + IntToStr(_p2._Int) +
               ' is not exist');
 
         end;
       inewobj:
         begin
-          GetValue(CodeBuf, _p1); // prototypeobj
           GetValue(CodeBuf, _p2); // copyobj
-          if _p1._Int >= FObjMgr.ObjectCount then
-            Obj := TObj.Create(FObjMgr)
-          else
-            Obj := FObjMgr.GetAObject(_p1._Int);
+          Obj := TObj.Create(FObjMgr);
           _p2._Type := pobject;
-          _p2._Int := _p1._Int;
-          _p2._Object := Obj;
+          _p2._Int := Obj.Id;
         end;
       inop:
         begin
@@ -287,6 +281,12 @@ begin
           GetValue(CodeBuf, _p2);
           if _p1._Type = inone then
             RunError('var "' + _p1._Id + '" is not def');
+          if _p1._Type = ivalue then
+          begin
+            if not Assigned(_p1._Value) then
+              RunError('do not have a ivalue');
+            _P1 := _p1._Value;
+          end;
           if _p2._Type = ivalue then
           begin
             if not Assigned(_p2._Value) then
@@ -317,7 +317,6 @@ begin
                 _p2._Type := pobject;
                 _p2._Int := _p1._Int;
                 _p2._String := _p1._String;
-                _p2._Object := _p1._Object;
               end;
           end;
         end;
@@ -643,7 +642,6 @@ begin
           GetValue(CodeBuf); // copyvalue
           Writeln;
         end;
-      icopyobj,
       imov,
       icmp:
         begin
