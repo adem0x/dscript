@@ -61,15 +61,16 @@ begin
 //   'for j = 1, 10 do write f.i; f = f.next; end; ';
 //  Source := 'f = {add = function(a,b)  return a + b end} i = f.add(9, 2); write i';
 //  Source := 'function add(a,b)  return a + b end; func = add; i = add(1, 2); write i';
-   Source := 'f = {i = 1}; f.i = 99; h = f; write h.i ';
+//   Source := 'f = {i = 1}; f.i = 99; h = f; write h.i ';
 //   Source := 'f = nil; for j = 1, 10 do f = {i = j; next = f}; end; write 100;'
 //   +
 //   'for j = 1, 10 do write f.i; f = f.next; end; ' ;
 //无脑支持forward，aha，原理太简单了add2是个全局变量。。。return的时候分配地址，定义的时候赋值
 //  Source := 'function add(a,b)  return add2(2)  end;   function add2(a) return a * 2 end  i = add(1, 2); write i';
 //  Source := 'function rec(a) if a > 1 then return rec(a - 1 ) else return 1 end; end; write rec(10)';
-//  Source :='f = {}; f[1] = 20;write f[1]';
+  Source :='f = {}; f[1] = 20;write f[1]';
 //  Source :='f = {i = 10}; write f.i;';
+//  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
   try
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);

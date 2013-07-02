@@ -20,7 +20,7 @@ type
   PValue = ^TValue;
 
   TValue = record
-    _Type: _TEmitInts;
+    _Type, _CodeType: _TEmitInts;
     _Int, _iident: integer;
     _String: string;
     _Boolean: boolean;

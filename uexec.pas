@@ -90,8 +90,10 @@ var
     I: Integer;
     T: _TEmitInts;
     m_fp: TFuncProp;
+    m_codetype: _TEmitInts;
   begin
     Value._Type := _PEmitInts(P)^;
+    m_codetype := Value._Type;
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
       pobject:
@@ -139,6 +141,7 @@ var
           Value._Int := I;
         end;
     end;
+    Value._CodeType := m_codetype;
   end;
 
   procedure Str2Int(var Value: PValue);
@@ -170,9 +173,12 @@ begin
         begin
           GetValue(CodeBuf, _p1); // obj
           GetValue(CodeBuf, _p2); // objvalue
-          GetValue(CodeBuf, _p3); // copyvalue
+          GetValue(CodeBuf, _p3); // valueto
           Obj := FObjMgr.GetAObject(_p1._Int);
-          _pt := Obj.FindAValue(_p2._Int);
+          if _p2._CodeType = iident then
+            _pt := Obj.FindAValue(- _p2._Int)
+          else
+            _pt := Obj.FindAValue(_p2._Int);
           if _pt <> nil then
           begin
             _p3._Value := _pt;
