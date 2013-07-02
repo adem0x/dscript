@@ -97,18 +97,22 @@ function TObj.FindAValue(AName: Integer): PValue;
 begin
   if AName > 0 then
   begin
-    if AName < Length(FValues) then
-      Result := @FValues[AName]
-    else
-      Result := nil;
+    if AName >= Length(FValues) then
+    begin
+      FValuesCount := AName + 1;
+      SetLength(FValues, FValuesCount);
+    end;
+    Result := @FValues[AName]
   end else
   if AName < 0 then
   begin
     AName := - AName;
-    if AName < Length(FValues2) then
-      Result := @FValues2[AName]
-    else
-      Result := nil;
+    if AName >= Length(FValues2) then
+    begin
+      FValuesCount2 := AName + 1;
+      SetLength(FValues2, FValuesCount2);
+    end;
+    Result := @FValues2[AName]
   end;
 end;
 
