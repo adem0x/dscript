@@ -172,36 +172,27 @@ begin
           GetValue(CodeBuf, _p1); // obj
           GetValue(CodeBuf, _p2); // objvalue
           GetValue(CodeBuf, _p3); // copyvalue
-          _pt := TObj(_p1._Object).FindAValue(_p2._Int);
+          Obj := FObjMgr.GetAObject(_p1._Int);
+          _pt := Obj.FindAValue(_p2._Int);
           if _pt <> nil then
-            _p3^ := _pt^
+          begin
+            _p3._Value := _pt;
+            _p3._Type := ivalue;
+          end
           else
             // 再建立一个物体的属性表，修改下
             RunError('ObjectValue 0x' + IntToHex(Integer(_p1._Object), 8) +
               ' is not exist');
 
         end;
-      iputobjv:
-        begin
-          GetValue(CodeBuf, _p1); // obj
-          GetValue(CodeBuf, _p2); // objvalue
-          GetValue(CodeBuf, _p3); // copyvalue
-          // _p1._Object := FObjMgr.GetAObject(_p1._Int);
-          TObj(_p1._Object).AddAValue(_p2._Int, _p3^)
-        end;
       inewobj:
         begin
-          GetValue(CodeBuf, _p1);
-          if _p1._Int >= FCopyObjMgr.ObjectCount then
-            Obj := TObj.Create(FCopyObjMgr);
-        end;
-      icopyobj:
-        begin
-          GetValue(CodeBuf, _p1); // obj
-          GetValue(CodeBuf, _p2); // copyvalue
-          Obj := TObj.Create(FObjMgr);
-          _p1._Object := FCopyObjMgr.GetAObject(_p1._Int);
-          TObj(_p1._Object).CopyTo(Obj);
+          GetValue(CodeBuf, _p1); // prototypeobj
+          GetValue(CodeBuf, _p2); // copyobj
+          if _p1._Int >= FObjMgr.ObjectCount then
+            Obj := TObj.Create(FObjMgr)
+          else
+            Obj := FObjMgr.GetAObject(_p1._Int);
           _p2._Type := pobject;
           _p2._Int := _p1._Int;
           _p2._Object := Obj;
@@ -277,6 +268,12 @@ begin
           if _p1._Type = inone then
             RunError('var "' + _p1._Id + '" is not def on line:' +
               IntToStr(IP));
+          if _p1._Type = ivalue then
+          begin
+            if not Assigned(_p1._Value) then
+              RunError('do not have a ivalue');
+            _P1 := _p1._Value;
+          end;              
           case _p1._Type of
             pint:
               CoreWrite(_p1._Int);
@@ -290,6 +287,12 @@ begin
           GetValue(CodeBuf, _p2);
           if _p1._Type = inone then
             RunError('var "' + _p1._Id + '" is not def');
+          if _p2._Type = ivalue then
+          begin
+            if not Assigned(_p2._Value) then
+              RunError('do not have a ivalue');
+            _P2 := _p2._Value;
+          end;
           case _p1._Type of
             pfuncaddr:
               begin
@@ -627,7 +630,6 @@ begin
     Write(I,' ' ,PrintInts[Ints],' ');
     case Ints of
       igetobjv,
-      iputobjv,
       isub,
       iadd,
       imul,

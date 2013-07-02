@@ -167,7 +167,7 @@ begin
     tkhalt:
       ;
   else
-    // ParserError('not clear' + GetToken);
+     ParserError('not clear' + GetToken);
   end;
 end;
 
@@ -217,18 +217,16 @@ begin
   Match(tkleftbrace);
   Inc(FObjectId);
   FPropTable.EmitObject := True;
-  // m_objaddr := FPropTable.GetObjectAddr(IntToStr(FObjectId));
   m_objaddr := FPropTable.GetObjectAddr(AInts.sInstr);
   m_lastobjid := FPropTable.ObjectId;
   FPropTable.ObjectId := m_objaddr;
   Result.Ints := pobject;
   Result.iInstr := m_objaddr;
   Result.sInstr := IntToStr(FObjectId);
-  FEmitter.EmitCode(inewobj, Result);
   _p4.Ints := iident;
   _p4.sInstr := '1tempvar' + IntToStr(Stack);
   _p4.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-  FEmitter.EmitCode(icopyobj, Result, _p4);
+  FEmitter.EmitCode(inewobj, Result, _p4);
   while True do
   begin
     CurrentToken := GetNextToken();
@@ -241,36 +239,15 @@ begin
       _p1.Ints := ivalue;
       _p1.sInstr := idents;
       _p1.iInstr := FPropTable.GetValueAddr(_p1.sInstr);
-      CurrentToken := GetNextToken();
-      case CurrentToken of
-        tksemicolon:
-          begin
-            _p2.Ints := inone;
-            _p3.Ints := pobject;
-            _p3.iInstr := m_objaddr;
-            FEmitter.EmitCode(iputobjv, _p4, _p1, _p2);
-          end;
-        tkrightbrace:
-          Break;
-      else
-        begin
-          Match(tkequal);
-          case GetNextToken() of
-            tkfunc:
-              begin
-                Result := stmt_func(@_p1);
-                FEmitter.EmitCode(iputobjv, _p4, _p1, Result);
-              end;
-          else
-            begin
-              _p2 := sExp;
-              _p3.Ints := pobject;
-              _p3.iInstr := m_objaddr;
-              FEmitter.EmitCode(iputobjv, _p4, _p1, _p2);
-            end;
-          end;
-        end
-      end;
+      Match(tkequal);
+      _p2 := sExp(@_p1);
+      Inc(Stack);
+      _p3.Ints := iident;
+      _p3.sInstr := '1tempvar' + IntToStr(Stack);
+      _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+      Dec(Stack);
+      FEmitter.EmitCode(igetobjv, _p4, _p1, _p3);
+      FEmitter.EmitCode(imov, _p2, _p3);
     end;
   end;
   Result := _p4;
@@ -334,11 +311,11 @@ var
   LineNo: Integer;
   EmitObj: Boolean;
   fp: TFuncProp;
-label L1;
+label L1, L2;
 begin
   EmitObj := False;
   Inc(Stack);
-  Result.Ints := iident;
+  Result.Ints := iident;                           
   Result.sInstr := idents;
   if TempVar then
   begin
@@ -351,7 +328,25 @@ begin
   end;
   _p5 := Result;
 L1:
+L2:
   case GetNextToken() of
+    tkleftbracket:
+      begin
+        Match(tkleftbracket);
+        _p1.Ints := pint;
+        _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+        if _p1.iInstr = -1 then
+          ParserError(' ''' + _p1.sInstr + ''' is not a object');
+        _p2 := factor();
+        _p2.Ints := pint;
+        _p2.iInstr := -_p2.iInstr;
+        Result.Ints := iident;
+        Result.sInstr := '1tempvar' + IntToStr(Stack);
+        Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+        FEmitter.EmitCode(igetobjv, _p1, _p2, Result);
+        Match(tkrightbracket);
+        goto L2;
+      end;
     tkdot:
       begin
         Match(tkdot);
@@ -377,30 +372,23 @@ L1:
       begin
         Match(tkequal);
         _p4 := sExp(@Result);
-        if not EmitObj then
+        if _p4.Ints = pfunc then
         begin
-          if _p4.Ints = pfunc then
-          begin
-            _p3.Ints := iident;
-            _p3.sInstr := '1tempvar' + IntToStr(Stack);
-            _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-            FEmitter.EmitCode(ipop, _p3);
-            FEmitter.EmitCode(imov, _p3, Result);
-          end
-          else
-          begin
+          _p3.Ints := iident;
+          _p3.sInstr := '1tempvar' + IntToStr(Stack);
+          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
+          FEmitter.EmitCode(ipop, _p3);
+          FEmitter.EmitCode(imov, _p3, Result);
+        end
+        else
+        begin
 //            if _p4.Ints = pfuncaddr then
 //            begin
 //              fp := FPropTable.funcproptable[_p4.iInstr]^;
 //              fp.FuncName := Result.sInstr;
 //              FPropTable.funcproptable[Result.iInstr] := @fp;
 //            end;
-            FEmitter.EmitCode(imov, _p4, Result);
-          end;
-        end
-        else
-        begin
-          FEmitter.EmitCode(iputobjv, _p3, _p2, _p4);
+          FEmitter.EmitCode(imov, _p4, Result);
         end;
       end;
     tkleftpart:
@@ -590,6 +578,22 @@ begin
   Result := factor(AInts);
   while True do
     case GetNextToken() of
+      tkleftbracket:
+        begin
+          Match(tkleftbracket);
+          _p1.Ints := pint;
+          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+          if _p1.iInstr = -1 then
+            ParserError(' ''' + _p1.sInstr + ''' is not a object');
+          _p2 := factor();
+          _p2.Ints := pint;
+          _p2.iInstr := -_p2.iInstr;
+          Result.Ints := iident;
+          Result.sInstr := '1tempvar' + IntToStr(Stack);
+          Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
+          FEmitter.EmitCode(igetobjv, _p1, _p2, Result);
+          Match(tkrightbracket);
+        end;
       tkdot:
         begin
           Match(tkdot);

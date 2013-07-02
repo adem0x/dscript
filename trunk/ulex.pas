@@ -291,7 +291,7 @@ begin
           end;
         end;
       tkaddop, tksubop, tkmulop, tkdivop, tkequal, tkleftpart, tkrightpart,
-        tksemicolon, tkcomma, tkmodop, tkdot, tkleftbrace, tkrightbrace:
+        tksemicolon, tkcomma, tkmodop, tkdot, tkleftbrace, tkrightbrace, tkleftbracket, tkrightbracket:
         begin
           Result := LastToken;
           CurrentToken := Source^;
