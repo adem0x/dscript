@@ -1,4 +1,4 @@
-unit ucorefunc;
+unit uCoreFunc;
 
 interface
 

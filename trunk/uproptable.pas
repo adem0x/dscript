@@ -1,4 +1,4 @@
-unit uproptable;
+unit uPropTable;
 
 interface
 
@@ -19,27 +19,22 @@ type
     FFuncPropCount: Integer;
     FFuncPropTable: array of TFuncProp;
     FFuncVarPropTable: array of array of string; // 0Î¬ÊÇÈ«¾Ö
-    FObjectValuePropTable: array of array of string;
-    FObjectPropTable: array of string;
+    FObjectValuePropTable: array of string;
     function GetFuncPropTable(Index: Integer): PFuncProp;
     procedure SetFuncPropTable(Index: Integer; const Value: PFuncProp);
 
     procedure SetFuncVarPropTable(X, Y: Integer; const Value: string);
-    procedure SetObjectPropTable(X: Integer; const Value: string);
-    procedure SetObjectValuePropTable(X, Y: Integer; const Value: string);
+    procedure SetObjectValuePropTable(X: Integer; const Value: string);
   public
-    StrList, VarnameList, TempVarnameList, FuncNameList, FObjectList,
+    StrList, VarnameList, TempVarnameList, FuncNameList,
       FValueList: TStringList;
     FuncName: string;
     EmitObject: Boolean;
     ObjectName: string;
     ObjectId: Integer;
     constructor Create;
-    function CopyObjectValueName(AForm, ATo: Integer): Boolean;
     function IsAFunc(AVarName: string): Boolean;
-    function GetObjectAddr(AObjectName: string): Integer;
-    function FindObjectAddr(AObjectName: string): Integer;
-    function FindValueAddr(AObjectId: Integer; AValueName: string): Integer;
+    function FindValueAddr(AValueName: string): Integer;
     function GetValueAddr(AValeName: string): Integer;
     function FindAddr(varname: string): Integer;
     function GetFuncAddr(varname: string; EntryAddr: Integer): Integer;
@@ -49,12 +44,9 @@ type
     function GetStrAddr(strname: string): Integer;
     function GetTempVarAddr(varname: string): Integer;
     procedure ClearTempVar;
-    procedure ClearObject;
     procedure ClearValue;
     function GetFuncVarPropTable(X, Y: Integer): string;
-    function GetObjectValuePropTable(X, Y: Integer): string;
-    function GetObjectPropTable(X: Integer): string;
-    function FindAPropFromObjectTable(AObject: Integer): string;
+    function GetObjectValuePropTable(X: Integer): string;
     property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable
       write SetFuncPropTable;
   end;
@@ -140,11 +132,6 @@ begin
     Result := -Result;
 end;
 
-function TPropTable.FindAPropFromObjectTable(AObject: Integer): string;
-begin
-
-end;
-
 function TPropTable.GetTempVarAddr(varname: string): Integer;
 var
   Y: Integer;
@@ -167,16 +154,9 @@ begin
   if Result = -1 then
   begin
     Result := FValueList.Add(AValeName);
-    SetObjectValuePropTable(ObjectId, Result, AValeName);
+    SetObjectValuePropTable(Result, AValeName);
   end;
 end;
-
-procedure TPropTable.ClearObject;
-begin
-  FObjectList := TStringList.Create;
-  FObjectList.Add('999888t')
-end;
-
 procedure TPropTable.ClearTempVar;
 begin
   TempVarnameList.Clear;
@@ -189,15 +169,6 @@ begin
   FValueList.Add('999888t')
 end;
 
-function TPropTable.CopyObjectValueName(AForm, ATo: Integer): Boolean;
-var
-  I: Integer;
-begin
-  for I := 0 to Length(FObjectValuePropTable[AForm]) - 1 do
-    SetObjectValuePropTable(ATo, I, GetObjectValuePropTable(AForm, I));
-  Result := True;
-end;
-
 constructor TPropTable.Create;
 begin
   VarnameList := TStringList.Create;
@@ -208,8 +179,6 @@ begin
   FuncNameList.Add('999888t');
   StrList := TStringList.Create;
   StrList.Add('999888t');
-  FObjectList := TStringList.Create;
-  FObjectList.Add('999888t');
   FValueList := TStringList.Create;
   FValueList.Add('999888t')
 end;
@@ -241,27 +210,11 @@ begin
     Result := FFuncVarPropTable[X][Y];
 end;
 
-function TPropTable.GetObjectAddr(AObjectName: string): Integer;
-begin
-  Result := FObjectList.IndexOf(AObjectName);
-  if Result = -1 then
-  begin
-    Result := FObjectList.Add(AObjectName);
-    SetObjectPropTable(Result, AObjectName);
-  end;
-end;
 
-function TPropTable.GetObjectPropTable(X: Integer): string;
+function TPropTable.GetObjectValuePropTable(X: Integer): string;
 begin
-  if Length(FObjectPropTable) > X then
-    Result := FObjectPropTable[X];
-end;
-
-function TPropTable.GetObjectValuePropTable(X, Y: Integer): string;
-begin
-  if (Length(FObjectValuePropTable) > X) and
-    (Length(FObjectValuePropTable[X]) > Y) then
-    Result := FObjectValuePropTable[X][Y];
+  if (Length(FObjectValuePropTable) > X) then
+    Result := FObjectValuePropTable[X];
 end;
 
 procedure TPropTable.SetFuncVarPropTable(X, Y: Integer; const Value: string);
@@ -273,49 +226,22 @@ begin
   FFuncVarPropTable[X][Y] := Value;
 end;
 
-procedure TPropTable.SetObjectPropTable(X: Integer; const Value: string);
-begin
-  if Length(FObjectPropTable) <= X then
-    SetLength(FObjectPropTable, X + 1);
-  FObjectPropTable[X] := Value;
-end;
-
-procedure TPropTable.SetObjectValuePropTable(X, Y: Integer;
+procedure TPropTable.SetObjectValuePropTable(X: Integer;
   const Value: string);
 begin
   if Length(FObjectValuePropTable) <= X then
     SetLength(FObjectValuePropTable, X + 1);
-  if Length(FObjectValuePropTable[X]) <= Y then
-    SetLength(FObjectValuePropTable[X], Y + 1);
-  FObjectValuePropTable[X][Y] := Value;
+  FObjectValuePropTable[X] := Value;
 end;
 
-function TPropTable.FindObjectAddr(AObjectName: string): Integer;
+function TPropTable.FindValueAddr(AValueName: string): Integer;
 var
   I: Integer;
 begin
   Result := -1;
-  for I := 0 to Length(FObjectPropTable) - 1 do
+  for I := 0 to Length(FObjectValuePropTable) - 1 do
   begin
-    if FObjectPropTable[I] = AObjectName then
-    begin
-      Result := I;
-      Break;
-    end;
-  end;
-end;
-
-function TPropTable.FindValueAddr(AObjectId: Integer;
-  AValueName: string): Integer;
-var
-  I: Integer;
-begin
-  Result := -1;
-  if AObjectId >= Length(FObjectValuePropTable) then
-    Exit;
-  for I := 0 to Length(FObjectValuePropTable[AObjectId]) - 1 do
-  begin
-    if FObjectValuePropTable[AObjectId][I] = AValueName then
+    if FObjectValuePropTable[I] = AValueName then
     begin
       Result := I;
       Break;
