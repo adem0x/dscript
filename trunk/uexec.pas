@@ -49,7 +49,7 @@ uses
 
 procedure TExec.RunError(S: string);
 begin
-  raise Exception.Create('RunTimeError: ' + S + 'On Line: ' + IntToStr(IP));
+  raise Exception.Create('RunTimeError: ' + S + ' On Line: ' + IntToStr(IP));
 end;
 
 procedure TExec.Exec;
@@ -169,6 +169,17 @@ begin
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
+      isetobjv:
+      begin
+        GetValue(CodeBuf, _p1); // obj
+        GetValue(CodeBuf, _p2); // objvalue
+        GetValue(CodeBuf, _p3); // valueto
+        Obj := FObjMgr.GetAObject(_p1._Int);
+        if _p2._CodeType = iident then
+          Obj.AddAValue(- _p2._Int,_p3^)
+        else
+          Obj.AddAValue(_p2._Int,_p3^);
+      end;
       igetobjv:
         begin
           GetValue(CodeBuf, _p1); // obj
@@ -179,6 +190,22 @@ begin
             _pt := Obj.FindAValue(- _p2._Int)
           else
             _pt := Obj.FindAValue(_p2._Int);
+          while _pt = nil do
+          begin
+            _pt := Obj.FindAValue(0);
+            if (_pt <> nil) and (_pt._Type = pobject) and (_pt._Int > 0) then
+            begin
+              Obj := FObjMgr.GetAObject(_pt._Int);
+              if _p2._CodeType = iident then
+                _pt := Obj.FindAValue(- _p2._Int)
+              else
+                _pt := Obj.FindAValue(_p2._Int);
+            end else
+            begin
+              _pt := nil;
+              Break;
+            end;
+          end;
           if _pt <> nil then
           begin
             _p3._Value := _pt;
@@ -186,9 +213,8 @@ begin
           end
           else
             // 再建立一个物体的属性表，修改下
-            RunError('ObjectValue ' + IntToStr(_p2._Int) +
+            RunError('ObjValue ' + IntToStr(_p2._Int) +
               ' is not exist');
-
         end;
       inewobj:
         begin
@@ -279,6 +305,8 @@ begin
               CoreWrite(_p1._Int);
             pstring:
               CoreWrite(_p1._String);
+            else
+              CoreWrite('write param type error on line:' + IntToStr(IP));
           end;
         end;
       imov:

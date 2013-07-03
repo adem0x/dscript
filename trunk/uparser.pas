@@ -241,8 +241,7 @@ begin
       _p3.sInstr := '1tempvar' + IntToStr(Stack);
       _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
       Dec(Stack);
-      FEmitter.EmitCode(igetobjv, _p4, _p1, _p3);
-      FEmitter.EmitCode(imov, _p2, _p3);
+      FEmitter.EmitCode(isetobjv, _p4, _p1, _p2);
     end;
   end;
   Result := _p4;
@@ -344,17 +343,12 @@ L2:
       begin
         Match(tkdot);
         Match(tkident);
-        _p1.Ints := pint;
         _p1.iInstr := FPropTable.FindAddr(Result.sInstr);
         if _p1.iInstr = -1 then
           ParserError(' ''' + _p1.sInstr + ''' is not a object');
-        _p2.sInstr := GetToken();
-        _p2.Ints := pint;
-        _p2.iInstr := FPropTable.FindValueAddr(_p2.sInstr);
-        if _p2.iInstr = -1 then
-          ParserError('Object ''' + _p1.sInstr + ''' do not have a property ' +
-            _p2.sInstr);
-        _p3 := Result;
+        _p1.sInstr := GetToken();
+        _p1.Ints := pint;
+        _p1.iInstr := FPropTable.GetValueAddr(_p1.sInstr);
         Result.Ints := iident;
         Result.sInstr := '1tempvar' + IntToStr(Stack);
         Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
@@ -381,8 +375,8 @@ L2:
           end
           else
           begin
-            FEmitter.EmitCode(igetobjv, _p5, _p1, Result);
-            FEmitter.EmitCode(imov, _p4, Result)
+            FEmitter.EmitCode(isetobjv, _p5, _p1, _p4);
+//            FEmitter.EmitCode(imov, _p4, Result)
           end;
         end;
       end;
@@ -599,10 +593,7 @@ begin
             ParserError(' ''' + _p1.sInstr + ''' is not a object');
           _p2.sInstr := GetToken();
           _p2.Ints := pint;
-          _p2.iInstr := FPropTable.FindValueAddr(_p2.sInstr);
-          if _p2.iInstr = -1 then
-            ParserError('Object ''' + _p1.sInstr + ''' do not have a property '
-              + _p2.sInstr);
+          _p2.iInstr := FPropTable.GetValueAddr(_p2.sInstr);
           _p3 := Result;
           Result.Ints := iident;
           Result.sInstr := '1tempvar' + IntToStr(Stack);

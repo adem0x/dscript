@@ -230,8 +230,8 @@ begin
       if (Result = tkstring) and (InStr > 0) then
       begin
         SetLength(CurrentToken, Length(CurrentToken) - 1);
-        if (InStr mod 2) = 0 then
-          LexError(''' error');
+//        if (InStr mod 2) = 0 then
+//          LexError(''' error');
       end;
       Break;
     end;
