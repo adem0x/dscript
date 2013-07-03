@@ -1,4 +1,4 @@
-unit uparser;
+unit uParser;
 
 { bnf
   program -> stmt-sequence
@@ -40,7 +40,6 @@ type
     FInWhileStmt: Boolean;
     FBreakList: TList;
     FContinueList: TList;
-    FObjectId: Integer;
   private
     FPropTable: TPropTable;
     FLex: TLex;
@@ -215,14 +214,10 @@ var
 begin
   Inc(Stack);
   Match(tkleftbrace);
-  Inc(FObjectId);
-  FPropTable.EmitObject := True;
-  m_objaddr := FPropTable.GetObjectAddr(AInts.sInstr);
-  m_lastobjid := FPropTable.ObjectId;
-  FPropTable.ObjectId := m_objaddr;
   Result.Ints := pobject;
-  Result.iInstr := m_objaddr;
-  Result.sInstr := IntToStr(FObjectId);
+  Result.iInstr := FPropTable.GetStackAddr(AInts.sInstr);
+  Result.sInstr := AInts.sInstr;
+   FPropTable.EmitObject := True;
   _p4.Ints := iident;
   _p4.sInstr := '1tempvar' + IntToStr(Stack);
   _p4.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
@@ -252,9 +247,7 @@ begin
   end;
   Result := _p4;
   Match(tkrightbrace);
-  Dec(FObjectId);
   FPropTable.EmitObject := False;
-  FPropTable.ObjectId := m_objaddr;
   Dec(Stack);
 end;
 
@@ -334,7 +327,7 @@ L2:
       begin
         Match(tkleftbracket);
         _p1.Ints := pint;
-        _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+        _p1.iInstr := FPropTable.FindAddr(Result.sInstr);
         if _p1.iInstr = -1 then
           ParserError(' ''' + _p1.sInstr + ''' is not a object');
         _p2 := factor();
@@ -352,12 +345,12 @@ L2:
         Match(tkdot);
         Match(tkident);
         _p1.Ints := pint;
-        _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+        _p1.iInstr := FPropTable.FindAddr(Result.sInstr);
         if _p1.iInstr = -1 then
           ParserError(' ''' + _p1.sInstr + ''' is not a object');
         _p2.sInstr := GetToken();
         _p2.Ints := pint;
-        _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
+        _p2.iInstr := FPropTable.FindValueAddr(_p2.sInstr);
         if _p2.iInstr = -1 then
           ParserError('Object ''' + _p1.sInstr + ''' do not have a property ' +
             _p2.sInstr);
@@ -384,11 +377,6 @@ L2:
         begin
           if not EmitObj then
           begin
-            if FPropTable.FindObjectAddr(_p4.sInstr) <> -1 then
-            begin
-              FPropTable.GetObjectAddr(Result.sInstr);
-              FPropTable.CopyObjectValueName(_p4.iInstr, Result.iInstr)
-            end;
             FEmitter.EmitCode(imov, _p4, Result)
           end
           else
@@ -589,7 +577,7 @@ begin
         begin
           Match(tkleftbracket);
           _p1.Ints := pint;
-          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+          _p1.iInstr := FPropTable.FindAddr(Result.sInstr);
           if _p1.iInstr = -1 then
             ParserError(' ''' + _p1.sInstr + ''' is not a object');
           _p2 := factor();
@@ -606,12 +594,12 @@ begin
           Match(tkdot);
           Match(tkident);
           _p1.Ints := pint;
-          _p1.iInstr := FPropTable.FindObjectAddr(Result.sInstr);
+          _p1.iInstr := FPropTable.FindAddr(Result.sInstr);
           if _p1.iInstr = -1 then
             ParserError(' ''' + _p1.sInstr + ''' is not a object');
           _p2.sInstr := GetToken();
           _p2.Ints := pint;
-          _p2.iInstr := FPropTable.FindValueAddr(_p1.iInstr, _p2.sInstr);
+          _p2.iInstr := FPropTable.FindValueAddr(_p2.sInstr);
           if _p2.iInstr = -1 then
             ParserError('Object ''' + _p1.sInstr + ''' do not have a property '
               + _p2.sInstr);

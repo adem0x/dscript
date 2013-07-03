@@ -1,4 +1,4 @@
-unit uobjmgr;
+unit uObjMgr;
 
 interface
 
