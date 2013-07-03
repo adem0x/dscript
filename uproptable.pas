@@ -26,12 +26,9 @@ type
     procedure SetFuncVarPropTable(X, Y: Integer; const Value: string);
     procedure SetObjectValuePropTable(X: Integer; const Value: string);
   public
-    StrList, VarnameList, TempVarnameList, FuncNameList,
-      FValueList: TStringList;
+    StrList, VarnameList, TempVarnameList, FuncNameList, FValueList: TStringList;
     FuncName: string;
     EmitObject: Boolean;
-    ObjectName: string;
-    ObjectId: Integer;
     constructor Create;
     function IsAFunc(AVarName: string): Boolean;
     function FindValueAddr(AValueName: string): Integer;
@@ -166,7 +163,7 @@ end;
 procedure TPropTable.ClearValue;
 begin
   FValueList.Clear;
-  FValueList.Add('999888t')
+  FValueList.Add('prototype');//0的位置放原型继承
 end;
 
 constructor TPropTable.Create;
@@ -180,7 +177,7 @@ begin
   StrList := TStringList.Create;
   StrList.Add('999888t');
   FValueList := TStringList.Create;
-  FValueList.Add('999888t')
+  FValueList.Add('prototype')
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;

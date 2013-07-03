@@ -7,7 +7,7 @@ type
   _TEmitInts = (inone, iread, iwrite, imov, ijmp, ijse, ijbe, ijs, ijb, ije,
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,
-    pfuncaddr, iebp, inop, imod, igetobjv, inewobj,
+    pfuncaddr, iebp, inop, imod, igetobjv, inewobj, isetobjv,
     ivalue, itheend);
   PEmitInts = ^TEmitInts;
 
@@ -68,6 +68,7 @@ var
     'mod',
     'getobjv',
     'newobj',
+    'setobjv',
     'value',
     'theend'
   );

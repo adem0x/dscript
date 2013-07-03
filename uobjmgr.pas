@@ -41,7 +41,7 @@ implementation
 function TObj.AddAValue(AIndex: Integer; AValue: TValue): Boolean;
 begin
   Result := True;
-  if AIndex > 0 then
+  if AIndex >= 0 then
   begin
     if AIndex >= FValuesCount then
     begin
@@ -59,7 +59,7 @@ begin
       SetLength(FValues2, FValuesCount2);
     end;
     FValues2[AIndex] := AValue;
-  end else Result := False;
+  end
 end;
 
 function TObj.CopyTo(AObj: TObj): Boolean;
@@ -84,9 +84,9 @@ end;
 
 function TObj.DelAValue(AName: Integer): PValue;
 begin
-  if AName > 0 then
+  if AName >= 0 then
     FValues[AName]._Type := inone
-  else
+  else if AName < 0 then
     FValues2[- AName]._Type := inone;
   Result := nil;
 end;
@@ -94,25 +94,17 @@ end;
 function TObj.FindAValue(AName: Integer): PValue;
 begin
   Result := nil;
-  if AName > 0 then
+  if AName >= 0 then
   begin
-    if AName >= Length(FValues) then
-    begin
-      FValuesCount := AName + 1;
-      SetLength(FValues, FValuesCount);
-    end;
-    Result := @FValues[AName]
+    if AName < Length(FValues) then
+      Result := @FValues[AName]
   end else
   if AName < 0 then
   begin
     AName := - AName;
-    if AName >= Length(FValues2) then
-    begin
-      FValuesCount2 := AName + 1;
-      SetLength(FValues2, FValuesCount2);
-    end;
-    Result := @FValues2[AName]
-  end;
+    if AName < Length(FValues2) then
+      Result := @FValues2[AName]
+  end
 end;
 
 { TObjMgr }
