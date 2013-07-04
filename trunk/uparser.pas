@@ -26,7 +26,7 @@ unit uParser;
 }
 interface
 
-uses uconst, SysUtils, ulex, Classes, uemitter, uproptable,Contnrs;
+uses uconst, SysUtils, ulex, Classes, uemitter, uproptable, Contnrs;
 
 type
   TParser = class
@@ -681,6 +681,9 @@ begin
         Result.Ints := iident;
         Result.sInstr := sident;
         Result.iInstr := sident(Result.sInstr);
+        if (Result.iInstr < 0) and (FPropTable.FCurrentTempVarInFuncName <> FEmitter.EmitFuncMgr.CurrentFunc.FuncName)
+        and (FPropTable.FCurrentTempVarInFuncName <> '1Main') then
+          Result.Ints := iclosure;
         if FPropTable.IsAFunc(Result.sInstr) then
         begin
           Result.Ints := pfuncaddr;
@@ -721,7 +724,7 @@ begin
   Result := FPropTable.FindAddr(aIdent);
   if Result = 0 then
     Result := FPropTable.getstackaddr(aIdent);
-end;
+end;                            
 
 function TParser.sgetstring: string;
 begin

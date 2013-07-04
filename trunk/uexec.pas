@@ -97,6 +97,10 @@ var
     m_codetype := Value._Type;
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
+      iclosure:
+      begin
+      
+      end;
       pobject:
         begin
           Value._Int := PInteger(P)^;

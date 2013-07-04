@@ -113,7 +113,8 @@ begin
   FFunc:= TList.Create;
   FPropTable:= APropTable;
   StartEmitFunc('1Main');
-  FPropTable.CreateTempVar;
+  FPropTable.CreateTempVar();
+  FPropTable.FCurrentTempVarInFuncName := '1Main';
 end;
 
 procedure TEmitFuncMgr.StartEmitFunc(AFuncName: string);
@@ -131,7 +132,8 @@ var
   I: Integer;
 begin
   FPropTable.FreeTempVar;
-  FPropTable.CreateTempVar;
+  FPropTable.CreateTempVar();
+ FPropTable.FCurrentTempVarInFuncName := FCurrentFunc.FFuncName;
   m_CodeCount := 0;
   for I := 0 to FFunc.Count - 1 do
     Inc(m_CodeCount, TEmitFunc(FFunc[I]).CodeLineCount);
