@@ -1,8 +1,12 @@
-f = nil;
-for j = 1, 10 do
-	f = {i = j; next = f};
+add2 = function()
+var i = 1;
+function add(c,d)
+i = 3;
+i = c+ d + i;
+return i;
 end;
-for j = 1, 10 do
-	print(f.i);
-f = f.next;
+return add;
 end;
+c= add2();
+write c(1, 2);
+write c(1, 2);
