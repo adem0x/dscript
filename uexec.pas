@@ -236,7 +236,7 @@ begin
           GetValue(CodeBuf, _p1);
           Inc(FESP);
           FStack[FESP] := _p1^;
-          _p1^._Type := inone;
+//          _p1^._Type := inone;
         end;
       ipop:
         begin

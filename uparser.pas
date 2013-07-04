@@ -309,13 +309,13 @@ begin
   Inc(Stack);
   Result.Ints := iident;
   Result.sInstr := idents;
-  if TempVar then
+  Result.iInstr := FPropTable.FindAddr(Result.sInstr);
+  if Result.iInstr = 0 then
   begin
-    Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
-  end
-  else
-  begin
-    Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
+    if TempVar then
+      Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr)
+    else
+      Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
   end;
   _p5 := Result;
   L1:
@@ -806,7 +806,6 @@ var
 begin
   FFrontListStack.Push(FFrontList);
   FFrontList := TList.Create;
-  FPropTable.CreateTempVar;
   Inc(Stack);
   Match(tkfunc);
   if not Assigned(AInts) then
@@ -872,7 +871,6 @@ begin
   Result.sInstr := FEmitter.EmitFuncMgr.CurrentFunc.FuncName;
   Result.iInstr := FEmitter.EmitFuncMgr.FuncCount;
   FEmitter.EmitFuncMgr.EndEmitFunc;
-  FPropTable.FreeTempVar;
   {
   AInts = nil 是 类似 function xxx() end; 这种形式的函数
   }

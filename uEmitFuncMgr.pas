@@ -112,7 +112,8 @@ begin
   FStack := TStack.Create;
   FFunc:= TList.Create;
   FPropTable:= APropTable;
-  StartEmitFunc('1Main')
+  StartEmitFunc('1Main');
+  FPropTable.CreateTempVar;
 end;
 
 procedure TEmitFuncMgr.StartEmitFunc(AFuncName: string);
@@ -129,6 +130,8 @@ var
   m_FuncProp: TFuncProp;
   I: Integer;
 begin
+  FPropTable.FreeTempVar;
+  FPropTable.CreateTempVar;
   m_CodeCount := 0;
   for I := 0 to FFunc.Count - 1 do
     Inc(m_CodeCount, TEmitFunc(FFunc[I]).CodeLineCount);

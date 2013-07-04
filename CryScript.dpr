@@ -35,15 +35,15 @@ end;
 
 begin
 //
-//   with TStringList.Create do
-//   begin
-//   LoadFromFile('test\1.lua');
-//   Source := PAnsiChar(AnsiString(GetText));
-//   end;
+   with TStringList.Create do
+   begin
+     LoadFromFile('test\2.lua');
+     Source := PAnsiChar(AnsiString(GetText));
+   end;
 
 //  Source := 'function add(a, b) return a+ b; end; add2 = add; write add2(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
-   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
+//   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
   // Source := 'x = ''100''; y=x + 10; write y ';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
@@ -72,7 +72,7 @@ begin
 //  Source :='f = {i = 10}; write f.i;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
 //    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
-  Source := 'f = {add2 = function(c,d) function add(a, b) return a + b; end; return c + d + add(c, d); end;};write f.add2(1, 5)';
+//  Source := 'f = {add2 = function(c,d) function add(a, b) return a + b; end; return c + d + add(c, d); end;};write f.add2(1, 5)';
 //  Source := 'function add2(c,d) return c + d; end; function add(a, b)  return a + b + add2(a, b); end; write add(1, 5)';
   try
     gPropTable := TPropTable.Create;
