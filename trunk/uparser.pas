@@ -26,7 +26,7 @@ unit uParser;
 }
 interface
 
-uses uconst, SysUtils, ulex, Classes, uemitter, uproptable;
+uses uconst, SysUtils, ulex, Classes, uemitter, uproptable,Contnrs;
 
 type
   TParser = class
@@ -35,8 +35,8 @@ type
     CurrentToken: Token;
     Stack: Integer;
     TempVar: Boolean;
-    TempVarCount: Integer;
     FFrontList: TList;
+    FFrontListStack: TStack;
     FInWhileStmt: Boolean;
     FBreakList: TList;
     FContinueList: TList;
@@ -108,13 +108,13 @@ begin
     raise Exception.Create('AEmitter or APropTable  is nil');
   FLex := TLex.Create;
   TempVar := False;
-  FFrontList := TList.Create;
+  FFrontListStack := TStack.Create;
 end;
 
 destructor TParser.Destroy;
 begin
   FLex.Free;
-  FFrontList.Free;
+  FFrontListStack.Free;
   inherited;
 end;
 
@@ -154,7 +154,7 @@ begin
     tkvar:
       stmt_var;
     tkfunc:
-        stmt_func;
+      stmt_func;
     tkreturn:
       stmt_return;
     tkbreak:
@@ -166,7 +166,7 @@ begin
     tkhalt, tkend:
       ;
   else
-     ParserError('not clear' + GetToken);
+    ParserError('not clear' + GetToken);
   end;
 end;
 
@@ -217,7 +217,7 @@ begin
   Result.Ints := pobject;
   Result.iInstr := FPropTable.GetStackAddr(AInts.sInstr);
   Result.sInstr := AInts.sInstr;
-   FPropTable.EmitObject := True;
+  FPropTable.EmitObject := True;
   _p4.Ints := iident;
   _p4.sInstr := '1tempvar' + IntToStr(Stack);
   _p4.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
@@ -307,20 +307,19 @@ label L1, L2;
 begin
   EmitObj := False;
   Inc(Stack);
-  Result.Ints := iident;                           
+  Result.Ints := iident;
   Result.sInstr := idents;
   if TempVar then
   begin
     Result.iInstr := -FPropTable.gettempvaraddr(Result.sInstr);
-    Inc(TempVarCount);
   end
   else
   begin
     Result.iInstr := FPropTable.getstackaddr(Result.sInstr);
   end;
   _p5 := Result;
-L1:
-L2:
+  L1:
+  L2:
   case GetNextToken() of
     tkleftbracket:
       begin
@@ -805,11 +804,9 @@ var
   m_FuncProp: PFuncProp;
   S: string;
 begin
-  if FEmitter.EmitFunc then
-    ParserError('do not support nest func');
-  FFrontList.Clear;
-  FPropTable.ClearTempVar;
-  TempVarCount := 0;
+  FFrontListStack.Push(FFrontList);
+  FFrontList := TList.Create;
+  FPropTable.CreateTempVar;
   Inc(Stack);
   Match(tkfunc);
   if not Assigned(AInts) then
@@ -823,9 +820,6 @@ begin
   end;
   FEmitter.EmitFuncMgr.StartEmitFunc(S);
   LineNo := FEmitter.emitnop();
-  Result.Ints := pfuncaddr;
-  Result.sInstr := FEmitter.EmitFuncMgr.CurrentFunc.FuncName;
-  Result.iInstr := FEmitter.EmitFuncMgr.FuncCount;
   Match(tkleftpart);
   while True do
   begin
@@ -844,7 +838,6 @@ begin
     end;
   end;
   Match(tkrightpart);
-  // Match(tkbegin);
   if GetNextToken() <> tkend then
     Stmt_sequence;
   Match(tkend);
@@ -855,9 +848,10 @@ begin
     _p1.iInstr := FEmitter.codeline - lineno2;
     FEmitter.modifiycode(lineno2, ijmp, _p1);
   end;
-  FFrontList.Clear;
+  FreeAndNil(FFrontList);
+  FFrontList := FFrontListStack.Pop;
 
-  if TempVarCount = 0 then
+  if FPropTable.TempVarnameList.Count = 1 then
   begin
     // 删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
@@ -866,18 +860,23 @@ begin
   else
   begin
     _p1.Ints := pint;
-    _p1.iInstr := TempVarCount;
+    _p1.iInstr := FPropTable.TempVarnameList.Count - 1;
     FEmitter.modifiycode(LineNo, iebp, _p1);
 
     _p1.Ints := pint;
-    _p1.iInstr := -TempVarCount;
+    _p1.iInstr := -(FPropTable.TempVarnameList.Count - 1);
     FEmitter.EmitCode(iebp, _p1);
   end;
   FEmitter.EmitCode(iret);
+  Result.Ints := pfuncaddr;
+  Result.sInstr := FEmitter.EmitFuncMgr.CurrentFunc.FuncName;
+  Result.iInstr := FEmitter.EmitFuncMgr.FuncCount;
   FEmitter.EmitFuncMgr.EndEmitFunc;
+  FPropTable.FreeTempVar;
   {
   AInts = nil 是 类似 function xxx() end; 这种形式的函数
   }
+
   if AInts = nil then
   begin
     _p1.Ints := iident;
@@ -890,7 +889,7 @@ end;
 
 function TParser.stmt_callfunc(AInts: PEmitInts): TEmitInts;
 var
-  PushList: array [0 .. 100] of TEmitInts;
+  PushList: array[0..100] of TEmitInts;
   PushI, I: Integer;
   _p1, _p2, _p3: TEmitInts;
 begin
@@ -904,11 +903,11 @@ begin
         Break;
       tkcomma:
         Match(tkcomma);
-      else
-        Result := sExp();
-        PushList[PushI] := Result;
-        Inc(PushI);
-      end
+    else
+      Result := sExp();
+      PushList[PushI] := Result;
+      Inc(PushI);
+    end
   end;
   for I := PushI - 1 downto 0 do
     FEmitter.EmitCode(ipush, PushList[I]);
@@ -953,7 +952,6 @@ begin
   Result := sExp;
   FEmitter.EmitCode(ipush, Result);
   FFrontList.Add(Pointer(FEmitter.emitnop()));
-  // FEmitter.EmitCode(iret);
 end;
 
 procedure TParser.parser(ASource: PAnsiChar);
@@ -1008,3 +1006,4 @@ begin
 end;
 
 end.
+

@@ -241,6 +241,8 @@ end;
 
 function TEmitter.GetCodeLine: Integer;
 begin
+  if EmitFuncMgr.CurrentFunc = nil then
+  raise Exception.Create('');
   Result := EmitFuncMgr.CurrentFunc.CodeLineCount;
 end;
 

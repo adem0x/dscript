@@ -3,7 +3,7 @@ unit uPropTable;
 interface
 
 uses
-  uconst, Classes;
+  uconst, Classes, Contnrs;
 
 type
   PFuncProp = ^TFuncProp;
@@ -16,6 +16,7 @@ type
 type
   TPropTable = class
   private
+    FTempVarListStack: TStack;
     FFuncPropCount: Integer;
     FFuncPropTable: array of TFuncProp;
     FFuncVarPropTable: array of array of string; // 0Î¬ÊÇÈ«¾Ö
@@ -41,6 +42,8 @@ type
     function GetStrAddr(strname: string): Integer;
     function GetTempVarAddr(varname: string): Integer;
     procedure ClearTempVar;
+    procedure CreateTempVar;
+    procedure FreeTempVar;
     procedure ClearValue;
     function GetFuncVarPropTable(X, Y: Integer): string;
     function GetObjectValuePropTable(X: Integer): string;
@@ -170,14 +173,14 @@ constructor TPropTable.Create;
 begin
   VarnameList := TStringList.Create;
   VarnameList.Add('999888t');
-  TempVarnameList := TStringList.Create;
-  TempVarnameList.Add('999888t');
   FuncNameList := TStringList.Create;
   FuncNameList.Add('999888t');
   StrList := TStringList.Create;
   StrList.Add('999888t');
   FValueList := TStringList.Create;
-  FValueList.Add('prototype')
+  FValueList.Add('prototype');
+  FTempVarListStack := TStack.Create;
+  CreateTempVar;
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
@@ -249,6 +252,19 @@ end;
 function TPropTable.IsAFunc(AVarName: string): Boolean;
 begin
   Result :=  FuncNameList.IndexOf(AVarName) > -1;
+end;
+
+procedure TPropTable.CreateTempVar;
+begin
+  FTempVarListStack.Push(TempVarnameList);
+  TempVarnameList := TStringList.Create;
+  TempVarnameList.Add('999888t');
+end;
+
+procedure TPropTable.FreeTempVar;
+begin
+  TempVarnameList.Free;
+  TempVarnameList := FTempVarListStack.Pop;
 end;
 
 end.
