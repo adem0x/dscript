@@ -11,13 +11,15 @@ type
     FCodeLineCount: Integer;
     FCode: array of PAnsiChar;
     FCodeBufSize: Integer;
+    function GetCode(Index: Integer): PAnsiChar;
   public
     constructor Create;
     function AddACode(ACode: PAnsiChar): Boolean;
     function ModifiyCode(ALineNo: Integer; ACode: PAnsiChar): Boolean;
     function DeleteCode(ALineNo: Integer): Boolean;
     property CodeLineCount:Integer  read FCodeLineCount;
-    property FuncName:string  read FFuncName;
+    property FuncName:string  read FFuncName write FFuncName;
+    property Code[Index: Integer]:PAnsiChar  read GetCode;
   end;
 
   TEmitFuncMgr = class
@@ -35,12 +37,15 @@ type
     function ModifiyCode(ALineNo: Integer; ACode: PAnsiChar): Boolean;
     function DeleteCode(ALineNo: Integer): Boolean;
     procedure EndEmitFunc;
+    procedure OptimizeCode();
     function SaveCodeToList(AList: TList): Integer; //返回入口地址
     property FuncCount:Integer  read FFuncCount;
     property CurrentFunc: TEmitFunc  read FCurrentFunc;
   end;
 
 implementation
+uses
+  uOptimizer;
 
 { TEmitFunc }
 
@@ -52,7 +57,8 @@ begin
     SetLength(FCode, FCodeBufSize);
   end;
   FCode[CodeLineCount] := ACode;
-  Inc(FCodeLineCount)
+  Inc(FCodeLineCount);
+  Result := True;
 end;
 
 constructor TEmitFunc.Create;
@@ -75,8 +81,16 @@ begin
   begin
     FCode[I] := FCode[I + 1]
   end;
-//  Move(FCode[ALineNo + 1], FCode[ALineNo], FCodeLineCount - ALineNo - 1);
   Dec(FCodeLineCount);
+  Result := True;
+end;
+
+function TEmitFunc.GetCode(Index: Integer): PAnsiChar;
+begin
+  if Index < FCodeLineCount then
+    Result := FCode[Index]
+  else
+    Result := nil;
 end;
 
 function TEmitFunc.ModifiyCode(ALineNo: Integer;
@@ -84,6 +98,7 @@ function TEmitFunc.ModifiyCode(ALineNo: Integer;
 begin
   FreeMem(FCode[ALineNo]);
   FCode[ALineNo] := ACode;
+  Result := True;
 end;
 
 { TEmitFuncMgr }
@@ -131,9 +146,9 @@ var
   m_LastFuncCodeCount: Integer;
   m_FuncProp: TFuncProp;
 begin
+  Result := -1;
   if not Assigned(AList) then Exit;
-  if FCurrentFunc.FFuncName <> '1Main' then raise Exception.Create('emit main code is undone');
-  EndEmitFunc;
+  if FFunc[FFuncCount - 1].FFuncName <> '1Main' then raise Exception.Create('emit main code is undone');
   m_LastFuncCodeCount := 0;
   Result := 0;
   for I:= 0 to FFuncCount - 1 do
@@ -149,12 +164,26 @@ begin
     for J:= 0 to FFunc[I].CodeLineCount - 1 do
       AList.Add(FFunc[I].FCode[J])
   end;
-
 end;
 
 function TEmitFuncMgr.DeleteCode(ALineNo: Integer): Boolean;
 begin
   Result := FCurrentFunc.DeleteCode(ALineNo)
+end;
+
+procedure TEmitFuncMgr.OptimizeCode;
+var
+  ToFunc: array of TEmitFunc;
+  I: Integer;
+begin
+  Exit;
+  SetLength(ToFunc, FFuncCount);
+  for I:= 0 to FFuncCount - 1 do
+  begin
+    ToFunc[I] := PeepHoleOptimize(FFunc[I]);
+    FFunc[I].Free;
+    FFunc[I] := ToFunc[I];
+  end;
 end;
 
 end.
