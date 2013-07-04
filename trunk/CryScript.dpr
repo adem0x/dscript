@@ -13,7 +13,6 @@ uses
   uproptable in 'uproptable.pas',
   uobjmgr in 'uobjmgr.pas',
   uEmitFuncMgr in 'uEmitFuncMgr.pas',
-  IniFiles,
   uOptimizer in 'uOptimizer.pas'; 
 
 var
@@ -44,7 +43,7 @@ begin
 
 //  Source := 'function add(a, b) return a+ b; end; add2 = add; write add2(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
-  // Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
+   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
   // Source := 'x = ''100''; y=x + 10; write y ';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
@@ -72,11 +71,12 @@ begin
 //  Source :='b = function() end; c = 100;  write b';   
 //  Source :='f = {i = 10}; write f.i;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
-    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
+//    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
   try
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);
     gEmitter := TEmitter.Create(gExec, gPropTable);
+    gEmitter.Opt := True;
     gParser := TParser.Create(gEmitter, gPropTable);
     gParser.Opt := True;
     gParser.parser(Source);

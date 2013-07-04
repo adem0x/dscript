@@ -8,6 +8,7 @@ uses
 type
   TEmitter = class
   private
+    FOpt: Boolean;
     function GetEmitFuncState: Boolean;
   public
     FuncCodeLine: integer;
@@ -33,6 +34,7 @@ type
     function GetCodeLine: Integer;
     property CodeLine:Integer  read GetCodeLine;
     property EmitFunc: Boolean  read GetEmitFuncState;
+    property Opt: Boolean read FOpt write FOpt;
   end;
 
 var
@@ -69,6 +71,8 @@ var
   I: integer;
 begin
   FExec.Code.Clear;
+  if Opt then
+    EmitFuncMgr.OptimizeCode;
   FExec.IP := EmitFuncMgr.SaveCodeToList(FExec.Code);
   FExec.IPEnd := FExec.Code.Count;
   if Assigned(FPropTable.StrList) then

@@ -966,6 +966,7 @@ begin
     if GetNextToken() = tkhalt then
     begin
       FEmitter.EmitCode(ihalt);
+      FEmitter.EmitFuncMgr.EndEmitFunc;
       Break;
     end;
     Stmt_sequence;
