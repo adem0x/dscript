@@ -27,6 +27,7 @@ type
     procedure SetFuncVarPropTable(X, Y: Integer; const Value: string);
     procedure SetObjectValuePropTable(X: Integer; const Value: string);
   public
+    FCurrentTempVarInFuncName: string;
     StrList, VarnameList, TempVarnameList, FuncNameList, FValueList: TStringList;
     FuncName: string;
     EmitObject: Boolean;
@@ -42,7 +43,7 @@ type
     function GetStrAddr(strname: string): Integer;
     function GetTempVarAddr(varname: string): Integer;
     procedure ClearTempVar;
-    procedure CreateTempVar;
+    procedure CreateTempVar();
     procedure FreeTempVar;
     procedure ClearValue;
     function GetFuncVarPropTable(X, Y: Integer): string;
@@ -103,7 +104,9 @@ begin
   begin
     Result := FuncNameList.IndexOf(varname);
     if Result = -1 then
+    begin
       Result := TempVarnameList.IndexOf(varname);
+    end;
     if Result = -1 then
     begin
       Result := VarnameList.IndexOf(varname);
@@ -180,7 +183,7 @@ begin
   FValueList := TStringList.Create;
   FValueList.Add('prototype');
   FTempVarListStack := TStack.Create;
-  CreateTempVar;
+  CreateTempVar();
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
@@ -254,7 +257,7 @@ begin
   Result :=  FuncNameList.IndexOf(AVarName) > -1;
 end;
 
-procedure TPropTable.CreateTempVar;
+procedure TPropTable.CreateTempVar();
 begin
   FTempVarListStack.Push(TempVarnameList);
   TempVarnameList := TStringList.Create;

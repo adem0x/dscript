@@ -179,6 +179,12 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
+        iclosure:
+          begin
+            m.Write(_p.Ints, 1);
+            m.Write(_p.iInstr, SizeOf(integer));
+{$IFDEF emit} Write('iclosure', '(', _p.iInstr, ')', ' '); {$ENDIF}
+          end;
       else
         Write('emitparam error')
         // pfunc:

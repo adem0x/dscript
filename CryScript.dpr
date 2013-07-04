@@ -13,7 +13,8 @@ uses
   uproptable in 'uproptable.pas',
   uobjmgr in 'uobjmgr.pas',
   uEmitFuncMgr in 'uEmitFuncMgr.pas',
-  uOptimizer in 'uOptimizer.pas'; 
+  uOptimizer in 'uOptimizer.pas',
+  uEnvironment in 'uEnvironment.pas';
 
 var
   Source: PAnsiChar;
