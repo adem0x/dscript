@@ -259,10 +259,9 @@ begin
         end;
       icall:
         begin
-          Inc(CallESP);
-          Inc(EBP); //空出来放返回值的空间
-          CallStack[CallESP] := IP + 1;
           GetValue(CodeBuf, _p1);
+          if _p1._Type = inone then
+            RunError('var "' + _p1._Id + '" is not def');
           m_FuncProp := FPropTable.funcproptable[_p1._Int];
           if m_FuncProp.EntryAddr = -1 then
           begin
@@ -279,6 +278,9 @@ begin
               RunError('function: "' + _p1._String + '" is not def');
             end;
           end;
+          Inc(CallESP);
+          Inc(EBP); //空出来放返回值的空间
+          CallStack[CallESP] := IP + 1;
           IP := m_FuncProp.EntryAddr;
           Continue;
         end;
@@ -669,6 +671,7 @@ begin
     Write(I,' ' ,PrintInts[Ints],' ');
     case Ints of
       igetobjv,
+      isetobjv,
       isub,
       iadd,
       imul,
