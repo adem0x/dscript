@@ -2,7 +2,7 @@ unit uEmitFuncMgr;
 
 interface
 uses
-  SysUtils, Classes, uproptable;
+  SysUtils, Classes, uproptable, Contnrs;
 //管理生成的函数，便于代码优化
 type
   TEmitFunc = class
@@ -24,12 +24,11 @@ type
 
   TEmitFuncMgr = class
   private
-    FLastFunc: TEmitFunc;
-    FCurrentFunc: TEmitFunc;
-    FFunc: array of TEmitFunc;
-    FFuncBufSize: Integer;
-    FFuncCount: Integer;
+    FStack: TStack;
+    FCurrentFunc, FLastFunc: TEmitFunc;
+    FFunc: TList;
     FPropTable: TPropTable;
+    function GetFuncCount: Integer;
   public
     constructor Create(APropTable: TPropTable);
     procedure StartEmitFunc(AFuncName: string);
@@ -39,7 +38,7 @@ type
     procedure EndEmitFunc;
     procedure OptimizeCode();
     function SaveCodeToList(AList: TList): Integer; //返回入口地址
-    property FuncCount:Integer  read FFuncCount;
+    property FuncCount:Integer  read GetFuncCount;
     property CurrentFunc: TEmitFunc  read FCurrentFunc;
   end;
 
@@ -110,28 +109,34 @@ end;
 
 constructor TEmitFuncMgr.Create(APropTable: TPropTable);
 begin
+  FStack := TStack.Create;
+  FFunc:= TList.Create;
   FPropTable:= APropTable;
   StartEmitFunc('1Main')
 end;
 
 procedure TEmitFuncMgr.StartEmitFunc(AFuncName: string);
 begin
+  FStack.Push(FCurrentFunc);
   FLastFunc := FCurrentFunc;
   FCurrentFunc := TEmitFunc.Create;
   FCurrentFunc.FFuncName := AFuncName;
 end;
 
 procedure TEmitFuncMgr.EndEmitFunc;
+var
+  m_CodeCount: Integer;
+  m_FuncProp: TFuncProp;
+  I: Integer;
 begin
-  if FFuncCount >= FFuncBufSize then
-  begin
-    Inc(FFuncBufSize, 10);
-    SetLength(FFunc, FFuncBufSize)
-  end;
-  FFunc[FFuncCount] := FCurrentFunc;
-  Inc(FFuncCount);
-  FCurrentFunc := FLastFunc;
-  FLastFunc := nil;
+  m_CodeCount := 0;
+  for I := 0 to FFunc.Count - 1 do
+    Inc(m_CodeCount, TEmitFunc(FFunc[I]).CodeLineCount);
+  FFunc.Add(FCurrentFunc);
+  m_FuncProp.FuncName := FCurrentFunc.FFuncName;
+  m_FuncProp.EntryAddr := m_CodeCount; //从0开始，所以不用加1
+  FPropTable.FuncPropTable[FFunc.Count - 1] := @m_FuncProp;
+  FCurrentFunc := FStack.Pop
 end;
 
 function TEmitFuncMgr.ModifiyCode(ALineNo: Integer;
@@ -143,26 +148,18 @@ end;
 function TEmitFuncMgr.SaveCodeToList(AList: TList): Integer;
 var
   I, J: Integer;
-  m_LastFuncCodeCount: Integer;
-  m_FuncProp: TFuncProp;
+  m_FuncProp: PFuncProp;
 begin
   Result := -1;
   if not Assigned(AList) then Exit;
-  if FFunc[FFuncCount - 1].FFuncName <> '1Main' then raise Exception.Create('emit main code is undone');
-  m_LastFuncCodeCount := 0;
-  Result := 0;
-  for I:= 0 to FFuncCount - 1 do
+  if TEmitFunc(FFunc[FFunc.Count - 1]).FFuncName <> '1Main' then raise Exception.Create('emit main code is undone');
+
+  m_FuncProp := FPropTable.FuncPropTable[FFunc.Count - 1];
+  Result := m_FuncProp.EntryAddr;
+  for I:= 0 to FFunc.Count - 1 do
   begin
-    if I < FFuncCount - 1 then
-    begin
-    Inc(Result, FFunc[I].CodeLineCount);
-    m_FuncProp.FuncName := FFunc[I].FFuncName;
-    m_FuncProp.EntryAddr := m_LastFuncCodeCount;
-    FPropTable.FuncPropTable[I] := @m_FuncProp;
-    Inc(m_LastFuncCodeCount, FFunc[I].CodeLineCount);
-    end;
-    for J:= 0 to FFunc[I].CodeLineCount - 1 do
-      AList.Add(FFunc[I].FCode[J])
+    for J:= 0 to TEmitFunc(FFunc[I]).CodeLineCount - 1 do
+      AList.Add(TEmitFunc(FFunc[I]).FCode[J])
   end;
 end;
 
@@ -176,14 +173,11 @@ var
   ToFunc: array of TEmitFunc;
   I: Integer;
 begin
-  Exit;
-  SetLength(ToFunc, FFuncCount);
-  for I:= 0 to FFuncCount - 1 do
-  begin
-    ToFunc[I] := PeepHoleOptimize(FFunc[I]);
-    FFunc[I].Free;
-    FFunc[I] := ToFunc[I];
-  end;
+end;
+
+function TEmitFuncMgr.GetFuncCount: Integer;
+begin
+ Result := FFunc.Count
 end;
 
 end.

@@ -72,6 +72,8 @@ begin
 //  Source :='f = {i = 10}; write f.i;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
 //    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
+  Source := 'function add2(c,d) function add(a, b) return a + b; end; return c + d + add(c, d); end; add3 = add2; write add(1, 5)';
+//  Source := 'function add2(c,d) return c + d; end; function add(a, b)  return a + b + add2(a, b); end; write add(1, 5)';
   try
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);

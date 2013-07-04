@@ -55,6 +55,7 @@ end;
 procedure TExec.Exec;
 begin
   try
+    PrintCode;
     CoreExec
   except
     on E: Exception do
@@ -82,7 +83,7 @@ var
   neg: Integer;
   ER, BR: Boolean;
   S: string;
-  I: Integer;
+  I, m: Integer;
   m_FuncProp: PFuncProp;
   Obj: TObj;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
@@ -157,11 +158,15 @@ var
   end;
 
 begin
+
+
   ER := False;
   BR := False;
   EBP := 0;
+  m:= 0;
   while IP < IPEnd do
   begin
+    Inc(m);
     _p1 := @__p1;
     _p2 := @__p2;
     _p3 := @__p3;
@@ -630,6 +635,7 @@ var
         begin
           I := PInteger(P)^;
           Inc(P, SizeOf(Integer));
+          Value._Int := I;
           if I > 0 then
           begin
             Value._Id := FPropTable.GetFuncVarPropTable(0, I);
