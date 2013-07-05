@@ -36,11 +36,11 @@ end;
 
 begin
 //
-   with TStringList.Create do
-   begin
-     LoadFromFile('test\2.lua');
-     Source := PAnsiChar(AnsiString(GetText));
-   end;
+  with TStringList.Create do
+  begin
+    LoadFromFile('test\2.lua');
+    Source := PAnsiChar(AnsiString(GetText));
+  end;
 
 //  Source := 'function add(a, b) return a+ b; end; add2 = add; write add2(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
@@ -69,7 +69,7 @@ begin
 //无脑支持forward，aha，原理太简单了add2是个全局变量。。。return的时候分配地址，定义的时候赋值
 //  Source := 'function add(a,b)  return add2(2)  end;   function add2(a) return a * 2 end  i = add(1, 2); write i';
 //  Source := 'function rec(a) if a > 1 then return rec(a - 1 ) else return 1 end; end; write rec(10)';
-//  Source :='b = function() end; c = 100;  write b';   
+//  Source :='b = function() end; c = 100;  write b';
 //  Source :='f = {i = 10}; write f.i;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
 //    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
@@ -96,3 +96,4 @@ begin
   Readln;
 
 end.
+

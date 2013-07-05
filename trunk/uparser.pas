@@ -208,7 +208,6 @@ end;
 
 function TParser.stmt_object(AInts: PEmitInts): TEmitInts;
 var
-  m_objaddr, m_lastobjid: Integer;
   _p1, _p2, _p3, _p4: TEmitInts;
   CurrentToken: Token;
 begin
@@ -300,9 +299,7 @@ end;
 function TParser.stmt_assign(AInts: PEmitInts): TEmitInts;
 var
   _p1, _p2, _p3, _p4, _p5: TEmitInts;
-  LineNo: Integer;
   EmitObj: Boolean;
-  fp: TFuncProp;
 label L1, L2;
 begin
   EmitObj := False;
@@ -358,6 +355,8 @@ begin
       begin
         Match(tkequal);
         _p4 := sExp(@Result);
+        if FPropTable.IsAClosureVar(Result.sInstr) then
+          Result.Ints := iclosure;
         if _p4.Ints = pfunc then
         begin
           _p3.Ints := iident;
@@ -425,6 +424,10 @@ begin
           gtoken := asop;
           _p1 := Result;
           _p2 := term;
+          if FPropTable.IsAClosureVar(_p1.sInstr) then
+            _p1.Ints := iclosure;
+          if FPropTable.IsAClosureVar(_p2.sInstr) then
+            _p2.Ints := iclosure;
           if (_p1.Ints = pint) and (_p2.Ints = pint) and Opt then
           begin
             Result.Ints := pint;
@@ -681,8 +684,8 @@ begin
         Result.Ints := iident;
         Result.sInstr := sident;
         Result.iInstr := sident(Result.sInstr);
-        if (Result.iInstr < 0) and (FPropTable.FCurrentTempVarInFuncName <> FEmitter.EmitFuncMgr.CurrentFunc.FuncName)
-        and (FPropTable.FCurrentTempVarInFuncName <> '1Main') then
+
+        if (Result.iInstr < 0) and (FPropTable.IsAClosureVar(Result.sInstr)) then
           Result.Ints := iclosure;
         if FPropTable.IsAFunc(Result.sInstr) then
         begin
@@ -724,7 +727,7 @@ begin
   Result := FPropTable.FindAddr(aIdent);
   if Result = 0 then
     Result := FPropTable.getstackaddr(aIdent);
-end;                            
+end;
 
 function TParser.sgetstring: string;
 begin
@@ -801,10 +804,9 @@ end;
 
 function TParser.stmt_func(AInts: PEmitInts): TEmitInts;
 var
-  CurrentCodeLine, I: Integer;
+  I: Integer;
   _p1: TEmitInts;
   LineNo, lineno2: Integer;
-  m_FuncProp: PFuncProp;
   S: string;
 begin
   FFrontListStack.Push(FFrontList);
@@ -857,7 +859,6 @@ begin
   begin
     // 删除1条指令，入口地址要修改
     FEmitter.DeleteCode(LineNo);
-    I := FPropTable.getfuncaddr(FPropTable.FuncName);
   end
   else
   begin
@@ -892,7 +893,6 @@ function TParser.stmt_callfunc(AInts: PEmitInts): TEmitInts;
 var
   PushList: array[0..100] of TEmitInts;
   PushI, I: Integer;
-  _p1, _p2, _p3: TEmitInts;
 begin
   Inc(Stack);
   Match(tkleftpart);

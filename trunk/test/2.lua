@@ -1,7 +1,6 @@
 add2 = function()
 var i = 1;
 function add(c,d)
-i = 3;
 i = c+ d + i;
 return i;
 end;

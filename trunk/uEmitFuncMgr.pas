@@ -17,9 +17,9 @@ type
     function AddACode(ACode: PAnsiChar): Boolean;
     function ModifiyCode(ALineNo: Integer; ACode: PAnsiChar): Boolean;
     function DeleteCode(ALineNo: Integer): Boolean;
-    property CodeLineCount:Integer  read FCodeLineCount;
-    property FuncName:string  read FFuncName write FFuncName;
-    property Code[Index: Integer]:PAnsiChar  read GetCode;
+    property CodeLineCount: Integer read FCodeLineCount;
+    property FuncName: string read FFuncName write FFuncName;
+    property Code[Index: Integer]: PAnsiChar read GetCode;
   end;
 
   TEmitFuncMgr = class
@@ -36,10 +36,9 @@ type
     function ModifiyCode(ALineNo: Integer; ACode: PAnsiChar): Boolean;
     function DeleteCode(ALineNo: Integer): Boolean;
     procedure EndEmitFunc;
-    procedure OptimizeCode();
     function SaveCodeToList(AList: TList): Integer; //返回入口地址
-    property FuncCount:Integer  read GetFuncCount;
-    property CurrentFunc: TEmitFunc  read FCurrentFunc;
+    property FuncCount: Integer read GetFuncCount;
+    property CurrentFunc: TEmitFunc read FCurrentFunc;
   end;
 
 implementation
@@ -50,7 +49,7 @@ uses
 
 function TEmitFunc.AddACode(ACode: PAnsiChar): Boolean;
 begin
-  if FCodeLineCount>= FCodeBufSize then
+  if FCodeLineCount >= FCodeBufSize then
   begin
     Inc(FCodeBufSize, 10);
     SetLength(FCode, FCodeBufSize);
@@ -76,7 +75,7 @@ begin
     Exit;
   end;
   FreeMem(FCode[ALineNo]);
-  for I:= ALineNo to FCodeLineCount - 1 do
+  for I := ALineNo to FCodeLineCount - 1 do
   begin
     FCode[I] := FCode[I + 1]
   end;
@@ -110,10 +109,9 @@ end;
 constructor TEmitFuncMgr.Create(APropTable: TPropTable);
 begin
   FStack := TStack.Create;
-  FFunc:= TList.Create;
-  FPropTable:= APropTable;
+  FFunc := TList.Create;
+  FPropTable := APropTable;
   StartEmitFunc('1Main');
-  FPropTable.CreateTempVar();
   FPropTable.FCurrentTempVarInFuncName := '1Main';
 end;
 
@@ -123,6 +121,7 @@ begin
   FLastFunc := FCurrentFunc;
   FCurrentFunc := TEmitFunc.Create;
   FCurrentFunc.FFuncName := AFuncName;
+  FPropTable.CreateTempVar();
 end;
 
 procedure TEmitFuncMgr.EndEmitFunc;
@@ -132,8 +131,7 @@ var
   I: Integer;
 begin
   FPropTable.FreeTempVar;
-  FPropTable.CreateTempVar();
- FPropTable.FCurrentTempVarInFuncName := FCurrentFunc.FFuncName;
+  FPropTable.FCurrentTempVarInFuncName := FCurrentFunc.FFuncName;
   m_CodeCount := 0;
   for I := 0 to FFunc.Count - 1 do
     Inc(m_CodeCount, TEmitFunc(FFunc[I]).CodeLineCount);
@@ -161,9 +159,9 @@ begin
 
   m_FuncProp := FPropTable.FuncPropTable[FFunc.Count - 1];
   Result := m_FuncProp.EntryAddr;
-  for I:= 0 to FFunc.Count - 1 do
+  for I := 0 to FFunc.Count - 1 do
   begin
-    for J:= 0 to TEmitFunc(FFunc[I]).CodeLineCount - 1 do
+    for J := 0 to TEmitFunc(FFunc[I]).CodeLineCount - 1 do
       AList.Add(TEmitFunc(FFunc[I]).FCode[J])
   end;
 end;
@@ -173,16 +171,10 @@ begin
   Result := FCurrentFunc.DeleteCode(ALineNo)
 end;
 
-procedure TEmitFuncMgr.OptimizeCode;
-var
-  ToFunc: array of TEmitFunc;
-  I: Integer;
-begin
-end;
-
 function TEmitFuncMgr.GetFuncCount: Integer;
 begin
- Result := FFunc.Count
+  Result := FFunc.Count
 end;
 
 end.
+

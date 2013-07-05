@@ -10,10 +10,10 @@ type
 
   TExec = class
   private
-    globlevar: array [0 .. 1024 * 1024] of TValue;
-    tempvar: array [0 .. 1024 * 1024] of TValue;
-    FStack: array [0 .. 1024 * 1024] of TValue;
-    CallStack: array [0 .. 1024] of Integer;
+    globlevar: array[0..1024 * 1024] of TValue;
+    tempvar: array[0..1024 * 1024] of TValue;
+    FStack: array[0..1024 * 1024] of TValue;
+    CallStack: array[0..1024] of Integer;
     FESP, EBP, CallESP: Integer;
     FStringList: TStringList;
     FCode: TList;
@@ -23,6 +23,7 @@ type
     FIP, FIPEnd: Integer;
     FFunctionList: TStringList;
     FObjMgr: TObjMgr;
+    FCurrentUpValue: TValues;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -83,24 +84,18 @@ var
   neg: Integer;
   ER, BR: Boolean;
   S: string;
-  I, m: Integer;
+  I: Integer;
   m_FuncProp: PFuncProp;
   Obj: TObj;
   procedure GetValue(var P: PAnsiChar; var Value: PValue);
   var
     I: Integer;
-    T: _TEmitInts;
-    m_fp: TFuncProp;
     m_codetype: _TEmitInts;
   begin
     Value._Type := _PEmitInts(P)^;
     m_codetype := Value._Type;
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
-      iclosure:
-      begin
-      
-      end;
       pobject:
         begin
           Value._Int := PInteger(P)^;
@@ -138,6 +133,14 @@ var
           end;
           Value._i := I;
         end;
+      iclosure:
+        begin
+          I := PInteger(P)^;
+          Inc(P, SizeOf(Integer));
+          Value := @FCurrentUpValue[-I];
+          Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
+          Value._i := I;
+        end;
       pfuncaddr:
         begin
           I := PInteger(P)^;
@@ -162,15 +165,11 @@ var
   end;
 
 begin
-
-
   ER := False;
   BR := False;
   EBP := 0;
-  m:= 0;
   while IP < IPEnd do
   begin
-    Inc(m);
     _p1 := @__p1;
     _p2 := @__p2;
     _p3 := @__p3;
@@ -179,16 +178,16 @@ begin
     Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
       isetobjv:
-      begin
-        GetValue(CodeBuf, _p1); // obj
-        GetValue(CodeBuf, _p2); // objvalue
-        GetValue(CodeBuf, _p3); // valueto
-        Obj := FObjMgr.GetAObject(_p1._Int);
-        if _p2._CodeType = iident then
-          Obj.AddAValue(- _p2._Int,_p3^)
-        else
-          Obj.AddAValue(_p2._Int,_p3^);
-      end;
+        begin
+          GetValue(CodeBuf, _p1); // obj
+          GetValue(CodeBuf, _p2); // objvalue
+          GetValue(CodeBuf, _p3); // valueto
+          Obj := FObjMgr.GetAObject(_p1._Int);
+          if _p2._CodeType = iident then
+            Obj.AddAValue(-_p2._Int, _p3^)
+          else
+            Obj.AddAValue(_p2._Int, _p3^);
+        end;
       igetobjv:
         begin
           GetValue(CodeBuf, _p1); // obj
@@ -196,7 +195,7 @@ begin
           GetValue(CodeBuf, _p3); // valueto
           Obj := FObjMgr.GetAObject(_p1._Int);
           if _p2._CodeType = iident then
-            _pt := Obj.FindAValue(- _p2._Int)
+            _pt := Obj.FindAValue(-_p2._Int)
           else
             _pt := Obj.FindAValue(_p2._Int);
           while _pt = nil do
@@ -206,7 +205,7 @@ begin
             begin
               Obj := FObjMgr.GetAObject(_pt._Int);
               if _p2._CodeType = iident then
-                _pt := Obj.FindAValue(- _p2._Int)
+                _pt := Obj.FindAValue(-_p2._Int)
               else
                 _pt := Obj.FindAValue(_p2._Int);
             end else
@@ -282,6 +281,7 @@ begin
               RunError('function: "' + _p1._String + '" is not def');
             end;
           end;
+          FCurrentUpValue := m_FuncProp.UpValue;
           Inc(CallESP);
           Inc(EBP); //空出来放返回值的空间
           CallStack[CallESP] := IP + 1;
@@ -310,14 +310,14 @@ begin
             if not Assigned(_p1._Value) then
               RunError('do not have a ivalue');
             _P1 := _p1._Value;
-          end;              
+          end;
           case _p1._Type of
             pint:
               CoreWrite(_p1._Int);
             pstring:
               CoreWrite(_p1._String);
-            else
-              CoreWrite('write param type error on line:' + IntToStr(IP));
+          else
+            CoreWrite('write param type error on line:' + IntToStr(IP));
           end;
         end;
       imov:
@@ -605,8 +605,6 @@ var
   procedure GetValue(var P: PAnsiChar);
   var
     I: Integer;
-    T: _TEmitInts;
-    m_fp: TFuncProp;
     Value: TValue;
   begin
     Value._Type := _PEmitInts(P)^;
@@ -635,7 +633,7 @@ var
           Value._Int := PInteger(P)^;
           Value._String := StringList[Value._Int];
           Inc(P, SizeOf(Integer));
-          Write('(',Value._String,')', Value._Int);
+          Write('(', Value._String, ')', Value._Int);
         end;
       iident:
         begin
@@ -651,7 +649,7 @@ var
             Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
           end;
           Value._i := I;
-         Write('(',Value._Id,')', Value._Int);
+          Write('(', Value._Id, ')', Value._Int);
         end;
       pfuncaddr:
         begin
@@ -667,20 +665,20 @@ var
   CodeBuf: PAnsiChar;
   Ints: _TEmitInts;
 begin
-  for i:= 0 to Code.Count - 1 do
+  for i := 0 to Code.Count - 1 do
   begin
     CodeBuf := Code[i];
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
-    Write(I,' ' ,PrintInts[Ints],' ');
+    Write(I, ' ', PrintInts[Ints], ' ');
     case Ints of
       igetobjv,
-      isetobjv,
-      isub,
-      iadd,
-      imul,
-      idiv,
-      imod:
+        isetobjv,
+        isub,
+        iadd,
+        imul,
+        idiv,
+        imod:
         begin
           GetValue(CodeBuf); // obj
           Write('  ');
@@ -690,7 +688,7 @@ begin
           Writeln;
         end;
       imov,
-      icmp:
+        icmp:
         begin
           GetValue(CodeBuf); // obj
           Write(' ');
@@ -698,28 +696,29 @@ begin
           Writeln;
         end;
       inewobj,
-      ipush,
-      ipop,
-      iebp,
-      icall,
-      iread,
-      iwrite,
-      ijmp,
-      ije,
-      ijne,
-      ijse,
-      ijs,
-      ijbe,
-      ijb:
+        ipush,
+        ipop,
+        iebp,
+        icall,
+        iread,
+        iwrite,
+        ijmp,
+        ije,
+        ijne,
+        ijse,
+        ijs,
+        ijbe,
+        ijb:
         begin
           GetValue(CodeBuf);
           Writeln('');
         end;
-      inop:Writeln;
-      iret:Writeln;
-      ihalt:Writeln;
+      inop: Writeln;
+      iret: Writeln;
+      ihalt: Writeln;
     end;
   end;
 end;
 
 end.
+

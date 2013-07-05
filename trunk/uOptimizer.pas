@@ -16,9 +16,10 @@ pop a
 
 function PeepHoleOptimize(ACode: TEmitFunc): TEmitFunc;
 implementation
+
 function PeepHoleOptimize(ACode: TEmitFunc): TEmitFunc;
 var
-   Value: TValue;
+  Value: TValue;
   procedure GetValue(var P: PAnsiChar);
   begin
     Value._Type := _PEmitInts(P)^;
@@ -29,40 +30,38 @@ var
 var
   CodeBuf: PAnsiChar;
   Ints: _TEmitInts;
-  Buf: array[0..1023] of Char;
-  PBuf: PAnsiChar;
   I: Integer;
 begin
-  I:= 0;
-  while I >= ACode.CodeLineCount -1 do
+  I := 0;
+  while I >= ACode.CodeLineCount - 1 do
   begin
     CodeBuf := ACode.Code[i];
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
       igetobjv,
-      isub,
-      iadd,
-      imul,
-      idiv,
-      imod:
+        isub,
+        iadd,
+        imul,
+        idiv,
+        imod:
         begin
           Inc(CodeBuf, (SizeOf(_TEmitInts) + SizeOf(Integer)) * 2);
           GetValue(CodeBuf);
         end;
       imov,
-      icmp:
+        icmp:
         begin
           Inc(CodeBuf, (SizeOf(_TEmitInts) + SizeOf(Integer)));
           GetValue(CodeBuf);
         end;
       inewobj,
-      ipush,
-      ipop,
-      iebp,
-      icall,
-      iread,
-      iwrite:
+        ipush,
+        ipop,
+        iebp,
+        icall,
+        iread,
+        iwrite:
         begin
           GetValue(CodeBuf);
           Writeln('');
@@ -71,10 +70,11 @@ begin
   end;
   Result := TEmitFunc.Create;
   Result.FuncName := ACode.FuncName;
-  for I:= 0 to ACode.CodeLineCount - 1 do
+  for I := 0 to ACode.CodeLineCount - 1 do
   begin
     Result.AddACode(ACode.Code[I])
   end;
 end;
 
 end.
+
