@@ -52,7 +52,7 @@ begin
   end
   else if AIndex < 0 then
   begin
-    AIndex := - AIndex;
+    AIndex := -AIndex;
     if AIndex >= FValuesCount2 then
     begin
       FValuesCount2 := AIndex + 1;
@@ -72,7 +72,7 @@ begin
   for I := 0 to FValuesCount - 1 do
     AObj.AddAValue(I, FValues[I]);
   for I := 0 to FValuesCount2 - 1 do
-    AObj.AddAValue(- I, FValues2[I]);
+    AObj.AddAValue(-I, FValues2[I]);
   Result := True;
 end;
 
@@ -87,7 +87,7 @@ begin
   if AName >= 0 then
     FValues[AName]._Type := inone
   else if AName < 0 then
-    FValues2[- AName]._Type := inone;
+    FValues2[-AName]._Type := inone;
   Result := nil;
 end;
 
@@ -99,12 +99,12 @@ begin
     if AName < Length(FValues) then
       Result := @FValues[AName]
   end else
-  if AName < 0 then
-  begin
-    AName := - AName;
-    if AName < Length(FValues2) then
-      Result := @FValues2[AName]
-  end
+    if AName < 0 then
+    begin
+      AName := -AName;
+      if AName < Length(FValues2) then
+        Result := @FValues2[AName]
+    end
 end;
 
 { TObjMgr }

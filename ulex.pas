@@ -49,7 +49,7 @@ type
     tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil, tkleftbracket, tkrightbracket);
 
 var
-  KeyWord: array [0 .. 17] of string = (
+  KeyWord: array[0..17] of string = (
     'read',
     'write',
     'if',
@@ -68,8 +68,8 @@ var
     'new',
     'for',
     'nil'
-  );
-  KeyWordToken: array [0 .. 17] of Token = (
+    );
+  KeyWordToken: array[0..17] of Token = (
     tkread,
     tkwrite,
     tkif,
@@ -88,7 +88,7 @@ var
     tknew,
     tkfor,
     tknil
-  );
+    );
 
 type
   TLex = class
@@ -116,7 +116,7 @@ end;
 
 function TLex.GetNextToken(AMactch: boolean): Token;
 var
-  Temp: array [0 .. 255] of AnsiChar;
+  Temp: array[0..255] of AnsiChar;
   Tempi: integer;
   StateToken, LastToken: Token;
   m_Src: PAnsiChar;
@@ -139,11 +139,11 @@ begin
   while True do
   begin
     case FSource^ of
-      '0' .. '9':
+      '0'..'9':
         begin
           StateToken := tknum;
         end;
-      'a' .. 'z', 'A' .. 'Z', '_':
+      'a'..'z', 'A'..'Z', '_':
         begin
           StateToken := tkident;
         end;
@@ -341,7 +341,7 @@ begin
   begin
     Result := False;
     ret := IsKeyWord(AToken);
-    if  ret <> - 1 then
+    if ret <> -1 then
       LexError('expect "' + KeyWord[Byte(ret)] + '" but "' + GetToken + '" find.')
     else
     // {$IFDEF lex}
@@ -372,3 +372,4 @@ begin
 end;
 
 end.
+

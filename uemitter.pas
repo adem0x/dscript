@@ -32,8 +32,8 @@ type
     procedure ToExec;
     constructor Create(AExec: TExec; APropTable: TPropTable);
     function GetCodeLine: Integer;
-    property CodeLine:Integer  read GetCodeLine;
-    property EmitFunc: Boolean  read GetEmitFuncState;
+    property CodeLine: Integer read GetCodeLine;
+    property EmitFunc: Boolean read GetEmitFuncState;
     property Opt: Boolean read FOpt write FOpt;
   end;
 
@@ -47,7 +47,7 @@ uses
 
 function TEmitter.Ints2str(aInts: _TEmitInts): string;
 begin
-  if aInts in [iread .. itheend] then
+  if aInts in [iread..itheend] then
     Result := PrintInts[aInts];
 end;
 
@@ -67,12 +67,8 @@ begin
 end;
 
 procedure TEmitter.ToExec;
-var
-  I: integer;
 begin
   FExec.Code.Clear;
-  if Opt then
-    EmitFuncMgr.OptimizeCode;
   FExec.IP := EmitFuncMgr.SaveCodeToList(FExec.Code);
   FExec.IPEnd := FExec.Code.Count;
   if Assigned(FPropTable.StrList) then
@@ -89,7 +85,6 @@ procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
   _p1, _p2: TEmitInts);
 var
   Param: TEmitInts;
-  P: Pointer;
 begin
   Param.Ints := inone;
   EmitCode(atoken, _p1, _p2, Param, ALine);
@@ -99,7 +94,6 @@ procedure TEmitter.ModifiyCode(ALine: integer; atoken: _TEmitInts;
   _p1: TEmitInts);
 var
   Param: TEmitInts;
-  P: Pointer;
 begin
   Param.Ints := inone;
   EmitCode(atoken, _p1, Param, Param, ALine);
@@ -144,46 +138,46 @@ procedure TEmitter.EmitCode(atoken: _TEmitInts; _p1, _p2, _p3: TEmitInts;
             m.Write(_p.iInstr, SizeOf(integer));
 {$IFDEF emit}
             if _p.Ints = pfunc then
-            Write('(func)',_p.iInstr, ' ')
+              Write('(func)', _p.iInstr, ' ')
             else
-            Write(_p.iInstr, ' ');
+              Write(_p.iInstr, ' ');
 {$ENDIF}
           end;
         pstring:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write('''', _p.sInstr, ''' '); {$ENDIF}
+{$IFDEF emit}Write('''', _p.sInstr, ''' '); {$ENDIF}
           end;
         iident:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit}Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         pfuncaddr:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write('(funcaddr)', _p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit}Write('(funcaddr)', _p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         pobject:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit}Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         ivalue:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit}Write(_p.sInstr, '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
         iclosure:
           begin
             m.Write(_p.Ints, 1);
             m.Write(_p.iInstr, SizeOf(integer));
-{$IFDEF emit} Write('iclosure', '(', _p.iInstr, ')', ' '); {$ENDIF}
+{$IFDEF emit}Write('iclosure', '(', _p.iInstr, ')', ' '); {$ENDIF}
           end;
       else
         Write('emitparam error')
@@ -248,7 +242,7 @@ end;
 function TEmitter.GetCodeLine: Integer;
 begin
   if EmitFuncMgr.CurrentFunc = nil then
-  raise Exception.Create('');
+    raise Exception.Create('');
   Result := EmitFuncMgr.CurrentFunc.CodeLineCount;
 end;
 
@@ -258,3 +252,4 @@ begin
 end;
 
 end.
+

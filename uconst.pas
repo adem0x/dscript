@@ -4,7 +4,7 @@ interface
 
 type
   _PEmitInts = ^_TEmitInts;
-  _TEmitInts = (inone, iread, iwrite, imov,iclosure, ijmp, ijse, ijbe, ijs, ijb, ije,
+  _TEmitInts = (inone, iread, iwrite, imov, iclosure, ijmp, ijse, ijbe, ijs, ijb, ije,
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,
     pfuncaddr, iebp, inop, imod, igetobjv, inewobj, isetobjv,
@@ -30,7 +30,7 @@ type
   end;
 
 var
-  PrintInts: array [_TEmitInts] of string = (
+  PrintInts: array[_TEmitInts] of string = (
     'none',
     'read',
     'write',
@@ -72,7 +72,7 @@ var
     'setobjv',
     'value',
     'theend'
-  );
+    );
 
 implementation
 

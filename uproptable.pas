@@ -7,10 +7,11 @@ uses
 
 type
   PFuncProp = ^TFuncProp;
-
+  TValues= array[0..10] of TValue;
   TFuncProp = record
     FuncName: string;
     EntryAddr: Integer;
+    UpValue: TValues;
   end;
 
 type
@@ -44,13 +45,16 @@ type
     function GetTempVarAddr(varname: string): Integer;
     procedure ClearTempVar;
     procedure CreateTempVar();
+    function IsAClosureVar(varname: string): Boolean;
     procedure FreeTempVar;
     procedure ClearValue;
     function GetFuncVarPropTable(X, Y: Integer): string;
     function GetObjectValuePropTable(X: Integer): string;
     property FuncPropTable[Index: Integer]: PFuncProp read GetFuncPropTable
-      write SetFuncPropTable;
+    write SetFuncPropTable;
   end;
+const
+  CZeroStr = '999888t';
 
 implementation
 
@@ -160,34 +164,34 @@ begin
     SetObjectValuePropTable(Result, AValeName);
   end;
 end;
+
 procedure TPropTable.ClearTempVar;
 begin
   TempVarnameList.Clear;
-  TempVarnameList.Add('999888t');
+  TempVarnameList.Add(CZeroStr);
 end;
 
 procedure TPropTable.ClearValue;
 begin
   FValueList.Clear;
-  FValueList.Add('prototype');//0的位置放原型继承
+  FValueList.Add('prototype'); //0的位置放原型继承
 end;
 
 constructor TPropTable.Create;
 begin
   VarnameList := TStringList.Create;
-  VarnameList.Add('999888t');
+  VarnameList.Add(CZeroStr);
   FuncNameList := TStringList.Create;
-  FuncNameList.Add('999888t');
+  FuncNameList.Add(CZeroStr);
   StrList := TStringList.Create;
-  StrList.Add('999888t');
+  StrList.Add(CZeroStr);
   FValueList := TStringList.Create;
   FValueList.Add('prototype');
   FTempVarListStack := TStack.Create;
-  CreateTempVar();
 end;
 
 function TPropTable.GetFuncPropTable(Index: Integer): PFuncProp;
-begin              
+begin
   if Index >= FFuncPropCount then
     Result := nil
   else
@@ -203,8 +207,8 @@ begin
   begin
     SetLength(FFuncPropTable, index + 1);
     FFuncPropCount := Index + 1;
-    FFuncPropTable[index] := Value^;
   end;
+  FFuncPropTable[index] := Value^;
 end;
 
 function TPropTable.GetFuncVarPropTable(X, Y: Integer): string;
@@ -254,14 +258,24 @@ end;
 
 function TPropTable.IsAFunc(AVarName: string): Boolean;
 begin
-  Result :=  FuncNameList.IndexOf(AVarName) > -1;
+  Result := FuncNameList.IndexOf(AVarName) > -1;
 end;
 
 procedure TPropTable.CreateTempVar();
+var
+  m_list: TStringList;
 begin
   FTempVarListStack.Push(TempVarnameList);
-  TempVarnameList := TStringList.Create;
-  TempVarnameList.Add('999888t');
+  m_list := TStringList.Create;
+  if Assigned(TempVarnameList) then
+  begin
+    m_list.AddStrings(TempVarnameList);
+    TempVarnameList := m_list;
+  end else
+  begin
+    TempVarnameList := m_list;
+    TempVarnameList.Add(CZeroStr)
+  end;
 end;
 
 procedure TPropTable.FreeTempVar;
@@ -270,4 +284,22 @@ begin
   TempVarnameList := FTempVarListStack.Pop;
 end;
 
+function TPropTable.IsAClosureVar(varname: string): Boolean;
+var
+  m_list: TStringList;
+  I: Integer;
+begin
+  Result := False;
+  for I := 0 to FTempVarListStack.List.Count - 1 do
+  begin
+    m_list := FTempVarListStack.List[I];
+    if Assigned(m_list) and (m_list.IndexOf(varname) >= 0) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
 end.
+
