@@ -2,7 +2,7 @@ unit uEmitFuncMgr;
 
 interface
 uses
-  SysUtils, Classes, uproptable, Contnrs;
+  SysUtils, Classes, uproptable, Contnrs, uconst;
 //管理生成的函数，便于代码优化
 type
   TEmitFunc = class
@@ -34,6 +34,7 @@ type
     FCurrentFunc, FLastFunc: TEmitFunc;
     FFunc: TList;
     FPropTable: TPropTable;
+    FCurrentFuncIndex: Integer;
     function GetFuncCount: Integer;
   public
     constructor Create(APropTable: TPropTable);
@@ -45,6 +46,8 @@ type
     function SaveCodeToList(AList: TList): Integer; //返回入口地址
     property FuncCount: Integer read GetFuncCount;
     property CurrentFunc: TEmitFunc read FCurrentFunc;
+    function FirstFunc:TEmitFunc;
+    function GetNextFunc: TEmitFunc;
     procedure AddClosureVar(AVarName: string);
   end;
 
@@ -113,7 +116,7 @@ procedure TEmitFunc.EndFunc;
 var
   I: Integer;
 begin
-  for I:= 0 to Length(FLastCode) - 1 do
+  for I := 0 to Length(FLastCode) - 1 do
     AddACode(FLastCode[I])
 end;
 
@@ -171,9 +174,20 @@ begin
   FCurrentFunc.EndFunc;
   m_FuncProp.FuncName := FCurrentFunc.FFuncName;
   m_FuncProp.EntryAddr := m_CodeCount; //从0开始，所以不用加1
-  for I:= 0 to 10 do
+  for I := 0 to Length(m_FuncProp.UpValue) -1 do
   begin
-    m_FuncProp.UpValue[I]._Int := 0;
+    with m_FuncProp.UpValue[I] do
+    begin
+      _Type := inone;
+      _CodeType := inone;
+      _Int := 0;
+      _iident := 0;
+      _String := '';
+      _Boolean := False;
+      _Value := nil;
+      _Id := '';
+      _i := 0;
+    end;
   end;
 //  FillChar(m_FuncProp.UpValue, SizeOf(m_FuncProp.UpValue), #0);
 
@@ -219,6 +233,24 @@ procedure TEmitFuncMgr.AddClosureVar(AVarName: string);
 begin
   if Assigned(FCurrentFunc) then
     FCurrentFunc.AddClosureVar(AVarName);
+end;
+
+function TEmitFuncMgr.FirstFunc: TEmitFunc;
+begin
+  FCurrentFuncIndex:= 0;
+  if FFunc.Count > 0 then
+    Result := FFunc[0]
+  else
+    Result := nil;
+end;
+
+function TEmitFuncMgr.GetNextFunc: TEmitFunc;
+begin
+  Inc(FCurrentFuncIndex);
+  if FCurrentFuncIndex < FFunc.Count then
+    Result := FFunc[FCurrentFuncIndex]
+  else
+    Result := nil;
 end;
 
 end.

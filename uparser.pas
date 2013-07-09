@@ -26,7 +26,7 @@ unit uParser;
 }
 interface
 
-uses uconst, SysUtils, ulex, Classes, uemitter, uproptable, Contnrs;
+uses uconst, SysUtils, ulex, Classes, uemitter, uproptable, Contnrs, uEmitFuncMgr;
 
 type
   TParser = class
@@ -397,7 +397,7 @@ begin
           FEmitter.EmitCode(icall, Result);
         end;
       end;
-    tksemicolon:;
+    tksemicolon: ;
 //      Match(tksemicolon);
   else
     ParserError('unknown assign word: ' + GetToken);
@@ -889,6 +889,9 @@ begin
   Result.sInstr := FEmitter.EmitFuncMgr.CurrentFunc.FuncName;
   Result.iInstr := FEmitter.EmitFuncMgr.FuncCount;
   FEmitter.EmitFuncMgr.EndEmitFunc;
+  //循环当前函数临时变量列表对比所有函数包含的upvalue，如果是upvalue，
+  //则生成值复制语句复制到该函数对应的upvalue里面
+
   {
   AInts = nil 是 类似 function xxx() end; 这种形式的函数
   }

@@ -7,8 +7,8 @@ uses
 
 type
   PFuncProp = ^TFuncProp;
-  PValues=^TValues;
-  TValues= array[0..255] of TValue;
+  PValues = ^TValues;
+  TValues = array[0..255] of TValue;
   TFuncProp = record
     FuncName: string;
     EntryAddr: Integer;
