@@ -356,7 +356,10 @@ begin
         Match(tkequal);
         _p4 := sExp(@Result);
         if FPropTable.IsAClosureVar(Result.sInstr) then
+        begin
+          FEmitter.EmitFuncMgr.AddClosureVar(Result.sInstr);
           Result.Ints := iclosure;
+        end;
         if _p4.Ints = pfunc then
         begin
           _p3.Ints := iident;
@@ -394,8 +397,8 @@ begin
           FEmitter.EmitCode(icall, Result);
         end;
       end;
-    tksemicolon:
-      Match(tksemicolon);
+    tksemicolon:;
+//      Match(tksemicolon);
   else
     ParserError('unknown assign word: ' + GetToken);
   end;
@@ -425,9 +428,15 @@ begin
           _p1 := Result;
           _p2 := term;
           if FPropTable.IsAClosureVar(_p1.sInstr) then
+          begin
             _p1.Ints := iclosure;
+            FEmitter.EmitFuncMgr.AddClosureVar(_p1.sInstr);
+          end;
           if FPropTable.IsAClosureVar(_p2.sInstr) then
+          begin
             _p2.Ints := iclosure;
+            FEmitter.EmitFuncMgr.AddClosureVar(_p2.sInstr);
+          end;
           if (_p1.Ints = pint) and (_p2.Ints = pint) and Opt then
           begin
             Result.Ints := pint;
@@ -686,7 +695,10 @@ begin
         Result.iInstr := sident(Result.sInstr);
 
         if (Result.iInstr < 0) and (FPropTable.IsAClosureVar(Result.sInstr)) then
+        begin
           Result.Ints := iclosure;
+          FEmitter.EmitFuncMgr.AddClosureVar(Result.sInstr);
+        end;
         if FPropTable.IsAFunc(Result.sInstr) then
         begin
           Result.Ints := pfuncaddr;
@@ -808,6 +820,8 @@ var
   _p1: TEmitInts;
   LineNo, lineno2: Integer;
   S: string;
+  J: Integer;
+  m_list, m_list2: TStringList;
 begin
   FFrontListStack.Push(FFrontList);
   FFrontList := TList.Create;

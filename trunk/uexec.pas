@@ -23,7 +23,7 @@ type
     FIP, FIPEnd: Integer;
     FFunctionList: TStringList;
     FObjMgr: TObjMgr;
-    FCurrentUpValue: TValues;
+    FCurrentUpValue: PValues;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -281,7 +281,7 @@ begin
               RunError('function: "' + _p1._String + '" is not def');
             end;
           end;
-          FCurrentUpValue := m_FuncProp.UpValue;
+          FCurrentUpValue := @m_FuncProp.UpValue;
           Inc(CallESP);
           Inc(EBP); //空出来放返回值的空间
           CallStack[CallESP] := IP + 1;

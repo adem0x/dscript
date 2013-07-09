@@ -8,7 +8,7 @@ type
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
     ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,
     pfuncaddr, iebp, inop, imod, igetobjv, inewobj, isetobjv,
-    ivalue, itheend);
+    ivalue, imovclosure, itheend);
   PEmitInts = ^TEmitInts;
 
   TEmitInts = packed record
@@ -71,6 +71,7 @@ var
     'newobj',
     'setobjv',
     'value',
+    'movclosure',
     'theend'
     );
 

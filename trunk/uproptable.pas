@@ -7,7 +7,8 @@ uses
 
 type
   PFuncProp = ^TFuncProp;
-  TValues= array[0..10] of TValue;
+  PValues=^TValues;
+  TValues= array[0..255] of TValue;
   TFuncProp = record
     FuncName: string;
     EntryAddr: Integer;
@@ -17,7 +18,6 @@ type
 type
   TPropTable = class
   private
-    FTempVarListStack: TStack;
     FFuncPropCount: Integer;
     FFuncPropTable: array of TFuncProp;
     FFuncVarPropTable: array of array of string; // 0Î¬ÊÇÈ«¾Ö
@@ -28,7 +28,7 @@ type
     procedure SetFuncVarPropTable(X, Y: Integer; const Value: string);
     procedure SetObjectValuePropTable(X: Integer; const Value: string);
   public
-    FCurrentTempVarInFuncName: string;
+    FTempVarListStack: TStack;
     StrList, VarnameList, TempVarnameList, FuncNameList, FValueList: TStringList;
     FuncName: string;
     EmitObject: Boolean;
