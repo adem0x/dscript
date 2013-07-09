@@ -24,6 +24,7 @@ type
     property FuncName: string read FFuncName write FFuncName;
     property Code[Index: Integer]: PAnsiChar read GetCode;
     procedure AddClosureVar(AVarName: string);
+    function FindAColsureVar(AVarName: string): Boolean;
     function AddALastCode(ACode: PAnsiChar): Boolean;
     procedure EndFunc;
   end;
@@ -47,8 +48,9 @@ type
     property FuncCount: Integer read GetFuncCount;
     property CurrentFunc: TEmitFunc read FCurrentFunc;
     function FirstFunc:TEmitFunc;
-    function GetNextFunc: TEmitFunc;
+    function GetNextFunc(AFunc: TEmitFunc = nil): TEmitFunc;
     procedure AddClosureVar(AVarName: string);
+    function GetFuncNum(AFunc: TEmitFunc): Integer;
   end;
 
 implementation
@@ -118,6 +120,11 @@ var
 begin
   for I := 0 to Length(FLastCode) - 1 do
     AddACode(FLastCode[I])
+end;
+
+function TEmitFunc.FindAColsureVar(AVarName: string): Boolean;
+begin
+  Result := FClosureVarList.IndexOf(AVarName) <> -1
 end;
 
 function TEmitFunc.GetCode(Index: Integer): PAnsiChar;
@@ -229,6 +236,22 @@ begin
   Result := FFunc.Count
 end;
 
+function TEmitFuncMgr.GetFuncNum(AFunc: TEmitFunc): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := 0 to FFunc.Count - 1 do
+  begin
+    if AFunc = FFunc[I] then
+      begin
+        Result := I;
+        Break;
+      end;
+  end;
+
+end;
+
 procedure TEmitFuncMgr.AddClosureVar(AVarName: string);
 begin
   if Assigned(FCurrentFunc) then
@@ -244,13 +267,32 @@ begin
     Result := nil;
 end;
 
-function TEmitFuncMgr.GetNextFunc: TEmitFunc;
+function TEmitFuncMgr.GetNextFunc(AFunc: TEmitFunc): TEmitFunc;
+var
+  I: Integer;
 begin
-  Inc(FCurrentFuncIndex);
-  if FCurrentFuncIndex < FFunc.Count then
-    Result := FFunc[FCurrentFuncIndex]
-  else
-    Result := nil;
+  Result := nil;
+  if not Assigned(AFunc) then
+  begin
+    Inc(FCurrentFuncIndex);
+    if FCurrentFuncIndex < FFunc.Count then
+      Result := FFunc[FCurrentFuncIndex]
+  end else
+  begin
+    for I := 0 to FFunc.Count - 1 do
+      begin
+        if AFunc = FFunc[I] then
+        begin
+          if (I + 1) < FFunc.Count then
+          begin
+            FCurrentFuncIndex := I + 1;
+            Result := FFunc[FCurrentFuncIndex];
+          end;
+          Break;
+        end;
+
+      end;
+  end;
 end;
 
 end.
