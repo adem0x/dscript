@@ -260,6 +260,14 @@ begin
           GetValue(CodeBuf, _p1);
           Inc(EBP, _p1._Int);
         end;
+      imovclosure:
+        begin
+          GetValue(CodeBuf, _p1); // obj
+          GetValue(CodeBuf, _p2); // objvalue
+          GetValue(CodeBuf, _p3); // valueto
+          m_FuncProp := FPropTable.funcproptable[_p1._Int];
+          m_FuncProp.UpValue[-_p2._Int] := _p3^;
+        end;
       icall:
         begin
           GetValue(CodeBuf, _p1);

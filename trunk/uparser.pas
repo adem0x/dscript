@@ -817,11 +817,12 @@ end;
 function TParser.stmt_func(AInts: PEmitInts): TEmitInts;
 var
   I: Integer;
-  _p1: TEmitInts;
+  _p1,_p2,_p3: TEmitInts;
   LineNo, lineno2: Integer;
   S: string;
   J: Integer;
   m_list, m_list2: TStringList;
+  m_func: TEmitFunc;
 begin
   FFrontListStack.Push(FFrontList);
   FFrontList := TList.Create;
@@ -891,6 +892,47 @@ begin
   FEmitter.EmitFuncMgr.EndEmitFunc;
   //循环当前函数临时变量列表对比所有函数包含的upvalue，如果是upvalue，
   //则生成值复制语句复制到该函数对应的upvalue里面
+
+  for I := 0 to FPropTable.TempVarnameList.Count - 1 do
+  begin
+    S := FPropTable.TempVarnameList[I];
+    m_func := FEmitter.EmitFuncMgr.FirstFunc;
+    if m_func.FindAColsureVar(S) then
+    begin
+        _p1.Ints := pint;
+        _p1.sInstr := m_func.FuncName;
+        _p1.iInstr := FEmitter.EmitFuncMgr.GetFuncNum(m_func);
+
+        _p2.Ints := pint;
+        _p2.sInstr := s;
+        _p2.iInstr := FPropTable.GetStackAddr(_p2.sInstr);
+
+        _p3.Ints := iident;
+        _p3.sInstr := s;
+        _p3.iInstr := FPropTable.GetStackAddr(_p3.sInstr);
+        FEmitter.EmitCode(imovclosure, _p1, _p2 ,_p3);
+    end;
+    while True do
+    begin
+      m_func := FEmitter.EmitFuncMgr.GetNextFunc();
+      if not Assigned(m_func) then Break;
+      if m_func.FindAColsureVar(S) then
+      begin
+        _p1.Ints := pint;
+        _p1.sInstr := m_func.FuncName;
+        _p1.iInstr := FEmitter.EmitFuncMgr.GetFuncNum(m_func);
+
+        _p2.Ints := pint;
+        _p2.sInstr := s;
+        _p2.iInstr := FPropTable.GetStackAddr(_p2.sInstr);
+
+        _p3.Ints := iident;
+        _p3.sInstr := s;
+        _p3.iInstr := FPropTable.GetStackAddr(_p3.sInstr);
+        FEmitter.EmitCode(imovclosure, _p1, _p2 ,_p3);
+      end;
+    end;
+  end;
 
   {
   AInts = nil 是 类似 function xxx() end; 这种形式的函数
