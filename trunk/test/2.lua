@@ -4,6 +4,7 @@ function add(c)
 i = c+ i;
 return i;
 end;
+i = i - 80;
 return add;
 end;
 c= add2();

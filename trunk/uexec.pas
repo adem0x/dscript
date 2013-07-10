@@ -24,6 +24,7 @@ type
     FFunctionList: TStringList;
     FObjMgr: TObjMgr;
     FCurrentUpValue: PValues;
+    FMovclosureList: TList;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -73,6 +74,7 @@ begin
   FCode := TList.Create;
   FFunctionList := TStringList.Create;
   FObjMgr := TObjMgr.Create;
+  FMovclosureList := TList.Create;
 end;
 
 procedure TExec.CoreExec();
@@ -248,25 +250,27 @@ begin
           FStack[FESP]._Type := inone;
           Dec(FESP);
         end;
-      iret:
-        begin
-          IP := CallStack[CallESP];
-          Dec(CallESP);
-          Dec(EBP);
-          Continue;
-        end;
       iebp:
         begin
+        //closure一定有临时变量，有临时变量一定有iebp
+          while FMovclosureList.Count <> 0 do
+          begin
+            CodeBuf := FMovclosureList[FMovclosureList.Count - 1];
+            FMovclosureList.Delete(FMovclosureList.Count - 1);
+            Ints := _PEmitInts(CodeBuf)^;
+            Inc(CodeBuf, SizeOf(_TEmitInts));
+            GetValue(CodeBuf, _p1); // obj
+            GetValue(CodeBuf, _p2); // objvalue
+            GetValue(CodeBuf, _p3); // valueto
+            m_FuncProp := FPropTable.funcproptable[_p1._Int];
+            m_FuncProp.UpValue[-_p2._Int] := _p3^;
+          end;
           GetValue(CodeBuf, _p1);
           Inc(EBP, _p1._Int);
         end;
       imovclosure:
         begin
-          GetValue(CodeBuf, _p1); // obj
-          GetValue(CodeBuf, _p2); // objvalue
-          GetValue(CodeBuf, _p3); // valueto
-          m_FuncProp := FPropTable.funcproptable[_p1._Int];
-          m_FuncProp.UpValue[-_p2._Int] := _p3^;
+          FMovclosureList.Add(Code[IP]);
         end;
       icall:
         begin
@@ -294,6 +298,13 @@ begin
           Inc(EBP); //空出来放返回值的空间
           CallStack[CallESP] := IP + 1;
           IP := m_FuncProp.EntryAddr;
+          Continue;
+        end;
+      iret:
+        begin
+          IP := CallStack[CallESP];
+          Dec(CallESP);
+          Dec(EBP);
           Continue;
         end;
       iread:
