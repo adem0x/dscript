@@ -21,12 +21,11 @@ type
 
   TValue = record
     _Type, _CodeType: _TEmitInts;
-    _Int, _iident: integer;
+    _Int: integer;
     _String: string;
     _Boolean: boolean;
     _Value: PValue;
     _Id: string;
-    _i: Integer;
   end;
 
 var

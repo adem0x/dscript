@@ -188,15 +188,10 @@ begin
       _Type := inone;
       _CodeType := inone;
       _Int := 0;
-      _iident := 0;
-      _String := '';
       _Boolean := False;
       _Value := nil;
-      _Id := '';
-      _i := 0;
     end;
   end;
-//  FillChar(m_FuncProp.UpValue, SizeOf(m_FuncProp.UpValue), #0);
 
   FPropTable.FuncPropTable[FFunc.Count - 1] := @m_FuncProp;
   FCurrentFunc := FStack.Pop

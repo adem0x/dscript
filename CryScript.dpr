@@ -38,7 +38,7 @@ begin
 //
   with TStringList.Create do
   begin
-    LoadFromFile('test\2.lua');
+    LoadFromFile('test\3.lua');
     Source := PAnsiChar(AnsiString(GetText));
   end;
 

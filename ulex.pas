@@ -128,8 +128,19 @@ begin
   LastToken := tknone;
   StateToken := tknone;
   Result := tknone;
+  //´¦Àí×¢ÊÍ
+  if FSource^ = '#' then
+    while FSource^ <> #10 do Inc(FSource);
+  if FSource^ = '{' then
+  begin
+    while FSource^ <> '}' do Inc(FSource);
+    Inc(FSource);
+  end;
   while (FSource^ = ' ') or (FSource^ = #10) or (FSource^ = #13) do
     Inc(FSource);
+
+
+
   InStr := 0;
   if FSource >= FSourceLen then
   begin
@@ -269,13 +280,6 @@ begin
             CurrentToken := Temp;
             Break;
           end
-          else if StateToken = tksmallop then
-          begin
-            Result := tkunequal;
-            Temp[Tempi] := #0;
-            CurrentToken := Temp;
-            Break;
-          end;
         end;
       tksmallop:
         begin
@@ -285,6 +289,13 @@ begin
           if StateToken = tkequal then
           begin
             Result := tksmallequalop;
+            Temp[Tempi] := #0;
+            CurrentToken := Temp;
+            Break;
+          end
+          else if StateToken = tkbigop then
+          begin
+            Result := tkunequal;
             Temp[Tempi] := #0;
             CurrentToken := Temp;
             Break;
