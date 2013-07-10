@@ -13,7 +13,7 @@ type
     globlevar: array[0..1024 * 1024] of TValue;
     tempvar: array[0..1024 * 1024] of TValue;
     FStack: array[0..1024 * 1024] of TValue;
-    CallStack: array[0..1024] of Integer;
+    CallStack: array[0..1024] of Integer;//ret ip
     FESP, EBP, CallESP: Integer;
     FStringList: TStringList;
     FCode: TList;
@@ -133,7 +133,6 @@ var
             Value := @tempvar[EBP - I];
             Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
           end;
-          Value._i := I;
         end;
       iclosure:
         begin
@@ -141,7 +140,6 @@ var
           Inc(P, SizeOf(Integer));
           Value := @FCurrentUpValue[-I];
           Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
-          Value._i := I;
         end;
       pfuncaddr:
         begin
@@ -259,9 +257,9 @@ begin
             FMovclosureList.Delete(FMovclosureList.Count - 1);
             Ints := _PEmitInts(CodeBuf)^;
             Inc(CodeBuf, SizeOf(_TEmitInts));
-            GetValue(CodeBuf, _p1); // obj
-            GetValue(CodeBuf, _p2); // objvalue
-            GetValue(CodeBuf, _p3); // valueto
+            GetValue(CodeBuf, _p1); // func
+            GetValue(CodeBuf, _p2); // upvalue
+            GetValue(CodeBuf, _p3); // tempvar
             m_FuncProp := FPropTable.funcproptable[_p1._Int];
             m_FuncProp.UpValue[-_p2._Int] := _p3^;
           end;
@@ -362,8 +360,8 @@ begin
               begin
                 _p2._Type := pfuncaddr;
                 _p2._Int := _p1._Int;
-                FPropTable.funcproptable[_p2._i] := FPropTable.funcproptable
-                  [_p1._Int];
+//                FPropTable.funcproptable[_p2._i] := FPropTable.funcproptable
+//                  [_p1._Int];
               end;
             pint:
               begin
@@ -667,7 +665,6 @@ var
           begin
             Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
           end;
-          Value._i := I;
           Write('(', Value._Id, ')', Value._Int);
         end;
       pfuncaddr:
