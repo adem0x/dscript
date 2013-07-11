@@ -131,11 +131,6 @@ begin
   //´¦Àí×¢ÊÍ
   if FSource^ = '#' then
     while FSource^ <> #10 do Inc(FSource);
-  if FSource^ = '{' then
-  begin
-    while FSource^ <> '}' do Inc(FSource);
-    Inc(FSource);
-  end;
   while (FSource^ = ' ') or (FSource^ = #10) or (FSource^ = #13) do
     Inc(FSource);
 
