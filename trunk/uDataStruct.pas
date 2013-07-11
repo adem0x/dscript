@@ -10,9 +10,15 @@ type
     Next: PFreeData;
   end;
 
+  TStringData = record
+    Used: Boolean;
+    Mark: Boolean;
+    S: string;
+  end;
+
   TQuickStringList = class
   private
-    FList: array of string;
+    FList: array of TStringData;
     FListBufLen: Integer;
     FListCount: Integer;
     FFreeList: PFreeData;
@@ -24,6 +30,8 @@ type
     function Get(AIndex: Integer): string;
     function Delete(AIndex: Integer): Boolean;
     function AddStrings(AStringList: TStringList): Boolean;
+    procedure Mark(AIndex: Integer);
+    procedure Sweep();
   end;
 
 implementation
@@ -38,7 +46,7 @@ begin
   if Assigned(FFreeList) then
   begin
     Result := FFreeList.Index;
-    FList[Result] := S;
+    FList[Result].S := S;
     m_data := FFreeList;
     FFreeList := FFreeList.Next;
     Dispose(m_data);
@@ -46,7 +54,7 @@ begin
   begin
     CheckIndex;
     Result := FListCount;
-    FList[Result] := S;
+    FList[Result].S := S;
     Inc(FListCount);
   end;
 end;
@@ -88,6 +96,7 @@ begin
   Result := False;
   if AIndex < FListCount then
   begin
+    FList[AIndex].Mark := False;
     New(m_data);
     m_data.Index := AIndex;
     m_data.Next := FFreeList;
@@ -97,7 +106,27 @@ end;
 
 function TQuickStringList.Get(AIndex: Integer): string;
 begin
-  if AIndex < FListCount then Result := FList[AIndex]
+  if AIndex < FListCount then Result := FList[AIndex].S
+end;
+
+procedure TQuickStringList.Mark(AIndex: Integer);
+begin
+  if AIndex < FListCount then
+    FList[AIndex].Mark := True;
+end;
+
+procedure TQuickStringList.Sweep;
+var
+  I: Integer;
+begin
+  for I:= 0 to FListCount - 1 do
+  begin
+    if not FList[I].Mark then
+      Delete(I)
+    else
+      FList[I].Mark := False;
+  end;
+
 end;
 
 end.
