@@ -173,6 +173,7 @@ begin
     CodeBuf := Code[IP];
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
+    if (CallESP> 10240 or (ESP > 1024 * 1024) then  RunError('StackOverflow');
     case Ints of
       isetobjv:
         begin
