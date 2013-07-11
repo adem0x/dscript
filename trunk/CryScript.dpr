@@ -43,11 +43,11 @@ begin
     Source := PAnsiChar(AnsiString(GetText));
   end;
 
-//  Source := 'function add(a, b) return a+ b; end; add2 = add; write add2(5, 2)';
+//  Source := 'add = function(a, b) return a+ b; end; add2 = add; write add(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
 //   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
-   Source := 'x = ''100''; y=x + 10; write y ';
+//   Source := 'd= print(y) ';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(5,2), 3); write f';
@@ -70,7 +70,7 @@ begin
 //无脑支持forward，aha，原理太简单了add2是个全局变量。。。return的时候分配地址，定义的时候赋值
 //  Source := 'function add(a,b)  return add2(2)  end;   function add2(a) return a * 2 end  i = add(1, 2); write i';
 //  Source := 'function rec(a) if a > 1 then return rec(a - 1 ) else return 1 end; end; write rec(10)';
-//  Source :='b = function() end; c = 100;  write b';
+//  Source :='f ={}; b = function() return 100; end; f.a = b; write f.a()';
 //  Source :='f = {i = 10}; write f.i;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
 //    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';

@@ -360,25 +360,13 @@ begin
           FEmitter.EmitFuncMgr.AddClosureVar(Result.sInstr);
           Result.Ints := iclosure;
         end;
-        if _p4.Ints = pfunc then
+        if not EmitObj then
         begin
-          _p3.Ints := iident;
-          _p3.sInstr := '1tempvar' + IntToStr(Stack);
-          _p3.iInstr := -FPropTable.gettempvaraddr(_p3.sInstr);
-          FEmitter.EmitCode(ipop, _p3);
-          FEmitter.EmitCode(imov, _p3, Result);
+          FEmitter.EmitCode(imov, _p4, Result)
         end
         else
         begin
-          if not EmitObj then
-          begin
-            FEmitter.EmitCode(imov, _p4, Result)
-          end
-          else
-          begin
-            FEmitter.EmitCode(isetobjv, _p5, _p1, _p4);
-//            FEmitter.EmitCode(imov, _p4, Result)
-          end;
+          FEmitter.EmitCode(isetobjv, _p5, _p1, _p4);
         end;
       end;
     tkleftpart:
