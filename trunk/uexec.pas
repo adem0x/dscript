@@ -271,11 +271,8 @@ begin
         begin
           GetValue(CodeBuf, _p1);
           if _p1._Type = inone then
-            RunError('var "' + _p1._Id + '" is not def');
-          m_FuncProp := FPropTable.funcproptable[_p1._Int];
-          if m_FuncProp.EntryAddr = -1 then
           begin
-            I := FFunctionList.IndexOf(m_FuncProp.FuncName);
+            I := FFunctionList.IndexOf(_p1._Id);
             if I <> -1 then
             begin
               TFunction(FFunctionList.Objects[I])();
@@ -284,15 +281,18 @@ begin
             end
             else
             begin
-              RunError('function: "' + m_FuncProp.FuncName + '" is not def');
+              RunError('function: "' + _p1._Id + '" is not def');
             end;
-          end;
+          end else
+          begin
+          m_FuncProp := FPropTable.funcproptable[_p1._Int];
           FCurrentUpValue := @m_FuncProp.UpValue;
           Inc(CallESP);
           Inc(EBP); //空出来放返回值的空间
           CallStack[CallESP] := IP + 1;
           IP := m_FuncProp.EntryAddr;
           Continue;
+          end;
         end;
       iret:
         begin

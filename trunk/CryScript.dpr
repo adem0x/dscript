@@ -47,7 +47,7 @@ begin
 //   Source := 'c= 4*3 / 2; write c';
 //   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
-//   Source := 'd= print(y) ';
+   Source := 'y = 100; print(y) ';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(5,2), 3); write f';
