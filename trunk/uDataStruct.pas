@@ -47,6 +47,7 @@ begin
   begin
     Result := FFreeList.Index;
     FList[Result].S := S;
+    FList[Result].Used := True;
     m_data := FFreeList;
     FFreeList := FFreeList.Next;
     Dispose(m_data);
@@ -55,6 +56,7 @@ begin
     CheckIndex;
     Result := FListCount;
     FList[Result].S := S;
+    FList[Result].Used := True;
     Inc(FListCount);
   end;
 end;
@@ -97,6 +99,7 @@ begin
   if AIndex < FListCount then
   begin
     FList[AIndex].Mark := False;
+    FList[AIndex].Used := False;
     New(m_data);
     m_data.Index := AIndex;
     m_data.Next := FFreeList;
@@ -111,8 +114,11 @@ end;
 
 procedure TQuickStringList.Mark(AIndex: Integer);
 begin
-  if AIndex < FListCount then
+  if (AIndex < FListCount) and (FList[AIndex].Used) then
+  begin
     FList[AIndex].Mark := True;
+    Writeln('Mark: ',AIndex);
+  end;
 end;
 
 procedure TQuickStringList.Sweep;
@@ -121,8 +127,11 @@ var
 begin
   for I:= 0 to FListCount - 1 do
   begin
-    if not FList[I].Mark then
-      Delete(I)
+    if (FList[I].Used) and (not FList[I].Mark) then
+    begin
+      Delete(I);
+      Writeln('Sweep:', I);
+    end
     else
       FList[I].Mark := False;
   end;

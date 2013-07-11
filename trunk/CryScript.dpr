@@ -47,7 +47,7 @@ begin
 //   Source := 'c= 4*3 / 2; write c';
 //   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
-   Source := 'fac = function(n) if n = 0 then return 1  else return n * fac(n); end; end;  write fac(5)';
+//   Source := 'fac = function(n) if n = 0 then return 1  else return n * fac(n); end; end;  write fac(5)';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(5,2), 3); write f';
@@ -55,7 +55,7 @@ begin
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(1,2), 3); write f';
-  // Source := 'mywrite(100)';
+   Source := 's = ''100''; print(s)';
 //   Source := 'f = {i}; f.i = 100; write f.i;' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
 //   Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
