@@ -603,7 +603,7 @@ begin
         begin
           gtoken := mdop;
           _p1 := Result;
-          _p2 := factor;
+          _p2 := term;
           if (_p1.Ints = pint) and (_p2.Ints = pint) and Opt then
           begin
             Result.Ints := pint;
