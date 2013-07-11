@@ -41,6 +41,9 @@ type
     function RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
     property Stack[Index: Integer]: PValue read GetStack write SetStack;
     property ESP: Integer read FESP;
+    procedure Mark;
+    procedure Sweep;
+    procedure GarbageCollection;
   end;
 
 implementation
@@ -167,13 +170,14 @@ begin
   EBP := 0;
   while IP < IPEnd do
   begin
+    GarbageCollection;
     _p1 := @__p1;
     _p2 := @__p2;
     _p3 := @__p3;
     CodeBuf := Code[IP];
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
-    if (CallESP> 10240 or (ESP > 1024 * 1024) then  RunError('StackOverflow');
+    if (CallESP> 1024) or (ESP > 1024 * 1024) then  RunError('StackOverflow');
     case Ints of
       isetobjv:
         begin
@@ -253,7 +257,6 @@ begin
           begin
             CodeBuf := FMovclosureList[FMovclosureList.Count - 1];
             FMovclosureList.Delete(FMovclosureList.Count - 1);
-            Ints := _PEmitInts(CodeBuf)^;
             Inc(CodeBuf, SizeOf(_TEmitInts));
             GetValue(CodeBuf, _p1); // func
             GetValue(CodeBuf, _p2); // upvalue
@@ -588,9 +591,27 @@ begin
   end;
 end;
 
+procedure TExec.GarbageCollection;
+begin
+  Mark;
+  Sweep;
+end;
+
 function TExec.GetStack(Index: Integer): PValue;
 begin
   Result := @FStack[Index]
+end;
+
+procedure TExec.Mark;
+var
+  I: Integer;
+begin
+  for I := 0 to  1024 * 1024 -1 do
+  begin
+    if globlevar[I]._Type = pstring then
+      StringList.Mark(globlevar[I]._Int);
+  end;
+
 end;
 
 function TExec.RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
@@ -606,6 +627,11 @@ end;
 procedure TExec.SetStack(Index: Integer; const Value: PValue);
 begin
   FStack[Index] := Value^
+end;
+
+procedure TExec.Sweep;
+begin
+  StringList.Sweep;
 end;
 
 end.
