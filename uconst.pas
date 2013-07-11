@@ -22,7 +22,6 @@ type
   TValue = record
     _Type, _CodeType: _TEmitInts;
     _Int: integer;
-    _String: string;
     _Boolean: boolean;
     _Value: PValue;
     _Id: string;

@@ -3,7 +3,7 @@ unit uExec;
 interface
 
 uses
-  uconst, SysUtils, Classes, ucorefunc, uproptable, uobjmgr;
+  uconst, SysUtils, Classes, ucorefunc, uproptable, uobjmgr, uDataStruct;
 
 type
   TFunction = procedure;
@@ -15,7 +15,7 @@ type
     FStack: array[0..1024 * 1024] of TValue;
     CallStack: array[0..1024] of Integer;//ret ip
     FESP, EBP, CallESP: Integer;
-    FStringList: TStringList;
+    FStringList: TQuickStringList;
     FCode: TList;
     FCodeCount: Integer;
     FCodeLen: Word;
@@ -32,7 +32,7 @@ type
     constructor Create(APropTable: TPropTable);
     procedure CoreExec();
     procedure Exec();
-    property StringList: TStringList read FStringList;
+    property StringList: TQuickStringList read FStringList;
     property Code: TList read FCode;
     property CodeCount: Integer read FCodeCount;
     property CodeLen: Word read FCodeLen;
@@ -41,7 +41,6 @@ type
     function RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
     property Stack[Index: Integer]: PValue read GetStack write SetStack;
     property ESP: Integer read FESP;
-    procedure PrintCode;
   end;
 
 implementation
@@ -57,7 +56,6 @@ end;
 procedure TExec.Exec;
 begin
   try
-    PrintCode;
     CoreExec
   except
     on E: Exception do
@@ -70,7 +68,7 @@ begin
   if not Assigned(APropTable) then
     raise Exception.Create('PropTable is nil in TExec');
   FPropTable := APropTable;
-  FStringList := TStringList.Create;
+  FStringList := TQuickStringList.Create;
   FCode := TList.Create;
   FFunctionList := TStringList.Create;
   FObjMgr := TObjMgr.Create;
@@ -116,7 +114,6 @@ var
       pstring:
         begin
           Value._Int := PInteger(P)^;
-          Value._String := StringList[Value._Int];
           Inc(P, SizeOf(Integer));
         end;
       iident:
@@ -155,13 +152,13 @@ var
   procedure Str2Int(var Value: PValue);
   begin
     Value._Type := pint;
-    Value._Int := StrToIntDef(Value._String, 0);
+    Value._Int := StrToIntDef(StringList.Get(Value._Int), 0);
   end;
 
   procedure Int2Str(var Value: PValue);
   begin
     Value._Type := pstring;
-    Value._String := IntToStr(Value._Int)
+    Value._Int := StringList.Add(IntToStr(Value._Int));
   end;
 
 begin
@@ -287,8 +284,7 @@ begin
             end
             else
             begin
-              _p1._String := m_FuncProp.FuncName;
-              RunError('function: "' + _p1._String + '" is not def');
+              RunError('function: "' + m_FuncProp.FuncName + '" is not def');
             end;
           end;
           FCurrentUpValue := @m_FuncProp.UpValue;
@@ -313,7 +309,8 @@ begin
           else
           begin
             _p1._Type := pstring;
-            CoreRead(_p1._String)
+            CoreRead(S);
+            _p1._Int := StringList.Add(S);
           end;
         end;
       iwrite:
@@ -332,7 +329,7 @@ begin
             pint:
               CoreWrite(_p1._Int);
             pstring:
-              CoreWrite(_p1._String);
+              CoreWrite(StringList.Get(_p1._Int));
           else
             CoreWrite('write param type error on line:' + IntToStr(IP));
           end;
@@ -372,13 +369,11 @@ begin
               begin
                 _p2._Type := pstring;
                 _p2._Int := _p1._Int;
-                _p2._String := _p1._String;
               end;
             pobject:
               begin
                 _p2._Type := pobject;
                 _p2._Int := _p1._Int;
-                _p2._String := _p1._String;
               end;
           end;
         end;
@@ -408,12 +403,8 @@ begin
                 if _p2._Type = pint then
                   Int2Str(_p2);
                 _p3._Type := pstring;
-                S := StringList.Strings[_p1._Int] + StringList.Strings
-                  [_p2._Int];
-                I := StringList.IndexOf(S);
-                if I = -1 then
-                  I := StringList.Add(S);
-                _p3._Int := I;
+                S := StringList.Get(_p1._Int) + StringList.Get(_p2._Int);
+                _p3._Int := StringList.Add(S);
               end;
           end;
         end;
@@ -519,7 +510,7 @@ begin
               begin
                 if _p2._Type = pint then
                   Int2Str(_p2);
-                if _p1._String = _p2._String then
+                if StringList.Get(_p1._Int) = StringList.Get(_p2._Int) then
                   ER := True
                 else
                   ER := False;
@@ -614,126 +605,6 @@ end;
 procedure TExec.SetStack(Index: Integer; const Value: PValue);
 begin
   FStack[Index] := Value^
-end;
-
-procedure TExec.PrintCode;
-var
-  i: Integer;
-  procedure GetValue(var P: PAnsiChar);
-  var
-    I: Integer;
-    Value: TValue;
-  begin
-    Value._Type := _PEmitInts(P)^;
-    Inc(P, SizeOf(_TEmitInts));
-    case Value._Type of
-      pobject:
-        begin
-          Value._Int := PInteger(P)^;
-          Inc(P, SizeOf(Integer));
-          Write(Value._Int);
-        end;
-      ivalue:
-        begin
-          Value._Int := PInteger(P)^;
-          Inc(P, SizeOf(Integer));
-          Write(Value._Int);
-        end;
-      pint, pfunc:
-        begin
-          Value._Int := PInteger(P)^;
-          Inc(P, SizeOf(Integer));
-          Write(Value._Int);
-        end;
-      pstring:
-        begin
-          Value._Int := PInteger(P)^;
-          Value._String := StringList[Value._Int];
-          Inc(P, SizeOf(Integer));
-          Write('(', Value._String, ')', Value._Int);
-        end;
-      iident:
-        begin
-          I := PInteger(P)^;
-          Inc(P, SizeOf(Integer));
-          Value._Int := I;
-          if I > 0 then
-          begin
-            Value._Id := FPropTable.GetFuncVarPropTable(0, I);
-          end
-          else
-          begin
-            Value._Id := FPropTable.GetFuncVarPropTable(0, -I);
-          end;
-          Write('(', Value._Id, ')', Value._Int);
-        end;
-      pfuncaddr:
-        begin
-          I := PInteger(P)^;
-          Inc(P, SizeOf(Integer));
-          Value._Type := pfuncaddr;
-          Value._Int := I;
-          Write(Value._Int);
-        end;
-    end;
-  end;
-var
-  CodeBuf: PAnsiChar;
-  Ints: _TEmitInts;
-begin
-  for i := 0 to Code.Count - 1 do
-  begin
-    CodeBuf := Code[i];
-    Ints := _PEmitInts(CodeBuf)^;
-    Inc(CodeBuf, SizeOf(_TEmitInts));
-    Write(I, ' ', PrintInts[Ints], ' ');
-    case Ints of
-      igetobjv,
-        isetobjv,
-        isub,
-        iadd,
-        imul,
-        idiv,
-        imod:
-        begin
-          GetValue(CodeBuf); // obj
-          Write('  ');
-          GetValue(CodeBuf); // objvalue
-          Write('  ');
-          GetValue(CodeBuf); // copyvalue
-          Writeln;
-        end;
-      imov,
-        icmp:
-        begin
-          GetValue(CodeBuf); // obj
-          Write(' ');
-          GetValue(CodeBuf); // copyvalue
-          Writeln;
-        end;
-      inewobj,
-        ipush,
-        ipop,
-        iebp,
-        icall,
-        iread,
-        iwrite,
-        ijmp,
-        ije,
-        ijne,
-        ijse,
-        ijs,
-        ijbe,
-        ijb:
-        begin
-          GetValue(CodeBuf);
-          Writeln('');
-        end;
-      inop: Writeln;
-      iret: Writeln;
-      ihalt: Writeln;
-    end;
-  end;
 end;
 
 end.

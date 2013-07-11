@@ -14,7 +14,8 @@ uses
   uobjmgr in 'uobjmgr.pas',
   uEmitFuncMgr in 'uEmitFuncMgr.pas',
   uOptimizer in 'uOptimizer.pas',
-  uEnvironment in 'uEnvironment.pas';
+  uEnvironment in 'uEnvironment.pas',
+  uDataStruct in 'uDataStruct.pas';
 
 var
   Source: PAnsiChar;
@@ -31,7 +32,7 @@ begin
   if v._Type = pint then
     Writeln(v._int)
   else if v._Type = pstring then
-    Writeln(v._String)
+    Writeln(gExec.StringList.Get(v._Int))
 end;
 
 begin
@@ -46,7 +47,7 @@ begin
 //   Source := 'c= 4*3 / 2; write c';
 //   Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
   // Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
-  // Source := 'x = ''100''; y=x + 10; write y ';
+   Source := 'x = ''100''; y=x + 10; write y ';
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(5,2), 3); write f';
