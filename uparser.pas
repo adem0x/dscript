@@ -385,8 +385,6 @@ begin
           FEmitter.EmitCode(icall, Result);
         end;
       end;
-    tksemicolon: ;
-//      Match(tksemicolon);
   else
     ParserError('unknown assign word: ' + GetToken);
   end;
@@ -805,7 +803,7 @@ end;
 function TParser.stmt_func(AInts: PEmitInts): TEmitInts;
 var
   I: Integer;
-  _p1,_p2,_p3: TEmitInts;
+  _p1, _p2, _p3: TEmitInts;
   LineNo, lineno2: Integer;
   S: string;
   m_func: TEmitFunc;
@@ -885,18 +883,18 @@ begin
     m_func := FEmitter.EmitFuncMgr.FirstFunc;
     if m_func.FindAColsureVar(S) then
     begin
-        _p1.Ints := pint;
-        _p1.sInstr := m_func.FuncName;
-        _p1.iInstr := FEmitter.EmitFuncMgr.GetFuncNum(m_func);
+      _p1.Ints := pint;
+      _p1.sInstr := m_func.FuncName;
+      _p1.iInstr := FEmitter.EmitFuncMgr.GetFuncNum(m_func);
 
-        _p2.Ints := pint;
-        _p2.sInstr := s;
-        _p2.iInstr := FPropTable.GetStackAddr(_p2.sInstr);
+      _p2.Ints := pint;
+      _p2.sInstr := s;
+      _p2.iInstr := FPropTable.GetStackAddr(_p2.sInstr);
 
-        _p3.Ints := iident;
-        _p3.sInstr := s;
-        _p3.iInstr := FPropTable.GetStackAddr(_p3.sInstr);
-        FEmitter.EmitCode(imovclosure, _p1, _p2 ,_p3);
+      _p3.Ints := iident;
+      _p3.sInstr := s;
+      _p3.iInstr := FPropTable.GetStackAddr(_p3.sInstr);
+      FEmitter.EmitCode(imovclosure, _p1, _p2, _p3);
     end;
     while True do
     begin
@@ -915,7 +913,7 @@ begin
         _p3.Ints := iident;
         _p3.sInstr := s;
         _p3.iInstr := FPropTable.GetStackAddr(_p3.sInstr);
-        FEmitter.EmitCode(imovclosure, _p1, _p2 ,_p3);
+        FEmitter.EmitCode(imovclosure, _p1, _p2, _p3);
       end;
     end;
   end;

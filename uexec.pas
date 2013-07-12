@@ -13,7 +13,7 @@ type
     globlevar: array[0..1024 * 1024] of TValue;
     tempvar: array[0..1024 * 1024] of TValue;
     FStack: array[0..1024 * 1024] of TValue;
-    CallStack: array[0..1024] of Integer;//ret ip
+    CallStack: array[0..1024] of Integer; //ret ip
     FESP, EBP, CallESP: Integer;
     FStringList: TQuickStringList;
     FCode: TList;
@@ -182,7 +182,7 @@ begin
     CodeBuf := Code[IP];
     Ints := _PEmitInts(CodeBuf)^;
     Inc(CodeBuf, SizeOf(_TEmitInts));
-    if (CallESP> 1024) or (ESP > 1024 * 1024) then  RunError('StackOverflow');
+    if (CallESP > 1024) or (ESP > 1024 * 1024) then RunError('StackOverflow');
     case Ints of
       isetobjv:
         begin
@@ -294,13 +294,13 @@ begin
             end;
           end else
           begin
-          m_FuncProp := FPropTable.funcproptable[_p1._Int];
-          FCurrentUpValue := @m_FuncProp.UpValue;
-          Inc(CallESP);
-          Inc(EBP); //空出来放返回值的空间
-          CallStack[CallESP] := IP + 1;
-          IP := m_FuncProp.EntryAddr;
-          Continue;
+            m_FuncProp := FPropTable.funcproptable[_p1._Int];
+            FCurrentUpValue := @m_FuncProp.UpValue;
+            Inc(CallESP);
+            Inc(EBP); //空出来放返回值的空间
+            CallStack[CallESP] := IP + 1;
+            IP := m_FuncProp.EntryAddr;
+            Continue;
           end;
         end;
       iret:
@@ -618,7 +618,7 @@ procedure TExec.Mark;
 var
   I: Integer;
 begin
-  for I := 0 to  1024 * 1024 -1 do
+  for I := 0 to 1024 * 1024 - 1 do
   begin
     if globlevar[I]._Type = pstring then
     begin
@@ -632,7 +632,7 @@ begin
     end;
   end;
 
-  for I := 0 to  1024 * 1024 -1 do
+  for I := 0 to 1024 * 1024 - 1 do
   begin
     if tempvar[I]._Type = pstring then
     begin
@@ -673,22 +673,22 @@ var
   I: Integer;
   m_FuncProp: PFuncProp;
 begin
-  I:=0;
+  I := 0;
   while True do
   begin
-  m_FuncProp := FPropTable.funcproptable[I];
-  if not Assigned(m_FuncProp) then Break;
-  if LowerCase(m_FuncProp.FuncName) = LowerCase(AFuncName) then
-  begin
-    FCurrentUpValue := @m_FuncProp.UpValue;
-    Inc(CallESP);
-    Inc(EBP); //空出来放返回值的空间
-    CallStack[CallESP] := IP + 1;
-    FIP := m_FuncProp.EntryAddr;
-    Exec;
-    Break;
-  end;
-  Inc(I);
+    m_FuncProp := FPropTable.funcproptable[I];
+    if not Assigned(m_FuncProp) then Break;
+    if LowerCase(m_FuncProp.FuncName) = LowerCase(AFuncName) then
+    begin
+      FCurrentUpValue := @m_FuncProp.UpValue;
+      Inc(CallESP);
+      Inc(EBP); //空出来放返回值的空间
+      CallStack[CallESP] := IP + 1;
+      FIP := m_FuncProp.EntryAddr;
+      Exec;
+      Break;
+    end;
+    Inc(I);
   end;
 end;
 
