@@ -43,7 +43,7 @@ var
 implementation
 
 uses
-  uparser;
+  uparser, uOptimizer;
 
 function TEmitter.Ints2str(aInts: _TEmitInts): string;
 begin
@@ -67,7 +67,22 @@ begin
 end;
 
 procedure TEmitter.ToExec;
+var
+  m_func: TEmitFunc;
 begin
+  if Opt then
+  begin
+    m_func := EmitFuncMgr.FirstFunc;
+    if Assigned(m_func) then  PeepHoleOptimize(m_func);
+    while True do
+    begin
+      m_func := EmitFuncMgr.GetNextFunc();
+      if Assigned(m_func) then
+        PeepHoleOptimize(m_func)
+      else
+        Break;
+    end;
+  end;
   FExec.Code.Clear;
   FExec.IP := EmitFuncMgr.SaveCodeToList(FExec.Code);
   FExec.IPEnd := FExec.Code.Count;

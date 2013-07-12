@@ -22,7 +22,7 @@ var
   gEmitter: TEmitter;
   gPropTable: TPropTable;
   gParser: TParser;
-  p1: TValue;
+//  p1: TValue;
 
 procedure MyWrite;
 var
@@ -44,7 +44,7 @@ begin
 //    Source := PAnsiChar(AnsiString(GetText));
 //  end;
 
-//  Source := 'add = function(a, b) return a+ b; end; add2 = add; write add(5, 2)';
+  Source := 'add = function(a, b) return a+ b; end; add2 = add; a = add(5, 2); write a';
 //  Source := 'c= 4*3 / 2; write c';
 //  Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
 //  Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
