@@ -40,10 +40,10 @@ type
     FInWhileStmt: Boolean;
     FBreakList: TList;
     FContinueList: TList;
-  private
     FPropTable: TPropTable;
     FLex: TLex;
     FOpt: Boolean;
+    FSource: PAnsiChar;
     function GetNextToken(AMactch: Boolean = False): Token;
     function GetToken(): string;
     function Match(AToken: Token): Boolean;
@@ -81,6 +81,7 @@ type
     function stmt_return(AInts: PEmitInts = nil): TEmitInts;
     function reversedop(AEmitInts: _TEmitInts): _TEmitInts;
     function stmt_callfunc(AInts: PEmitInts = nil): TEmitInts;
+    function stmt_require(AInts: PEmitInts = nil): TEmitInts;
     procedure ToEmitter;
     property Opt: Boolean read FOpt write FOpt;
   end;
@@ -139,6 +140,8 @@ function TParser.statement: TEmitInts;
 begin
   CurrentToken := GetNextToken(False);
   case CurrentToken of
+    tkrequire:
+      stmt_require;
     tkfor:
       stmt_for;
     tkread:
@@ -1002,7 +1005,9 @@ function TParser.parser(ASource: PAnsiChar): Boolean;
 begin
   Result := False;
   if ASource = nil then Exit;
-  FLex.Source := ASource;
+  GetMem(FSource, Length(ASource));
+  Move(ASource^, FSource^, Length(ASource));
+  FLex.Source := FSource;
   while True do
   begin
     if GetNextToken() = tkhalt then
@@ -1047,6 +1052,45 @@ begin
   else
     Result := ijmp;
     ParserError('unhoped reversedop');
+  end;
+end;
+
+function TParser.stmt_require(AInts: PEmitInts): TEmitInts;
+var
+  S, S1, S2, S3: string;
+  F: TFileStream;
+  I: Integer;
+  P: PAnsiChar;
+begin
+//模块的规则
+//模块load之后加{}变为一个对象。因此模块里面的所有规则跟对象一样
+//里面只能有函数，因为就算有其他的也没有意义，不能调用
+  Match(tkrequire);
+  Match(tkstring);
+  S := GetToken;
+  if S[1] in ['0'..'9'] then ParserError('the require param not allow started by number');
+  if FileExists(S + '.cry') then
+  begin
+    F := TFileStream.Create(S + '.cry', fmOpenRead);
+    GetMem(P, F.Size);
+    F.Read(P^, F.Size);
+    SetString(S2, P, F.Size); // import code
+    FreeMem(P);
+    F.Free;
+    SetString(S1, FLex.Source, Length(FLex.Source));// current code
+    for I:= Length(S) downto 1 do
+    begin
+      if S[I] = '\' then Break;
+      S3:= S[I] + S3;
+    end;
+    S := S3 + '={' + S2 + '}' + S1;
+    FreeMem(FSource);
+    GetMem(FSource, Length(S));
+    Move(S[1], FSource^, Length(S));
+    FLex.Source := FSource;
+  end else
+  begin
+    ParserError('require file ' + 'S' + 'is not exists!');
   end;
 end;
 
