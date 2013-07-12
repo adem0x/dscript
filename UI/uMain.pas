@@ -64,15 +64,16 @@ begin
       begin
         gExec.Exec;
       end;
+      gExec.Free;
+      gEmitter.Free;
+      gPropTable.Free;
+      gParser.Free;
+      IO.Free;
     except
       on E: Exception do
         ShowMessage(E.ClassName + ': ' + E.Message);
     end;
-    gExec.Free;
-    gEmitter.Free;
-    gPropTable.Free;
-    gParser.Free;
-    IO.Free;
+
   end;
 end;
 

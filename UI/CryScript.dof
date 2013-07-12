@@ -91,7 +91,7 @@ ImageBase=4194304
 ExeDescription=
 [Directories]
 OutputDir=
-UnitOutputDir=
+UnitOutputDir=..\Dcu
 PackageDLLOutputDir=
 PackageDCPOutputDir=
 SearchPath=
@@ -130,5 +130,6 @@ Item0=emit
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
 [HistoryLists\hlUnitOutputDirectory]
-Count=1
-Item0=Dcu
+Count=2
+Item0=..\Dcu
+Item1=Dcu
