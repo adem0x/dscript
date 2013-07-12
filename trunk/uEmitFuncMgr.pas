@@ -2,7 +2,7 @@ unit uEmitFuncMgr;
 
 interface
 uses
-  SysUtils, Classes, uproptable, Contnrs, uconst;
+  SysUtils, Classes, uproptable, mycontnrs, uconst;
 //管理生成的函数，便于代码优化
 type
   TEmitFunc = class

@@ -26,7 +26,7 @@ unit uParser;
 }
 interface
 
-uses uconst, SysUtils, ulex, Classes, uemitter, uproptable, Contnrs, uEmitFuncMgr;
+uses uconst, SysUtils, ulex, Classes, uemitter, uproptable, mycontnrs, uEmitFuncMgr;
 
 type
   TParser = class
