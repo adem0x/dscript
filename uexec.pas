@@ -674,6 +674,7 @@ var
   m_FuncProp: PFuncProp;
 begin
   I := 0;
+  Result := False;
   while True do
   begin
     m_FuncProp := FPropTable.funcproptable[I];
@@ -686,6 +687,7 @@ begin
       CallStack[CallESP] := IP + 1;
       FIP := m_FuncProp.EntryAddr;
       Exec;
+      Result := True;
       Break;
     end;
     Inc(I);
