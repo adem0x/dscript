@@ -6,7 +6,7 @@ type
   _PEmitInts = ^_TEmitInts;
   _TEmitInts = (inone, iread, iwrite, imov, iclosure, ijmp, ijse, ijbe, ijs, ijb, ije,
     ijne, isub, iadd, imul, idiv, inum, iident, icmp, ihalt, icall, iret, ipush,
-    ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,
+    ipop, pnil, pboolean, ptrue, pfalse, pint, pstring, pfunc, pobject,pnewobject,
     pfuncaddr, iebp, inop, imod, igetobjv, inewobj, isetobjv,
     ivalue, imovclosure, itheend);
   PEmitInts = ^TEmitInts;
@@ -61,6 +61,7 @@ var
     'string',
     'function',
     'object',
+    'newobject',
     'funcaddr',
     'iebp',
     'nop',

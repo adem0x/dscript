@@ -25,6 +25,7 @@ type
     FObjMgr: TObjMgr;
     FCurrentUpValue: PValues;
     FMovclosureList: TList;
+    FGc: Integer;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
@@ -99,7 +100,7 @@ var
     m_codetype := Value._Type;
     Inc(P, SizeOf(_TEmitInts));
     case Value._Type of
-      pobject:
+      pobject, pnewobject:
         begin
           Value._Int := PInteger(P)^;
           Inc(P, SizeOf(Integer));
@@ -118,6 +119,7 @@ var
         begin
           Value._Int := PInteger(P)^;
           Inc(P, SizeOf(Integer));
+          StringList.Get(Value._Int)
         end;
       iident:
         begin
@@ -168,9 +170,9 @@ begin
   ER := False;
   BR := False;
   EBP := 0;
+  FGc := 0;
   while IP < IPEnd do
   begin
-    GarbageCollection;
     _p1 := @__p1;
     _p2 := @__p2;
     _p3 := @__p3;
@@ -230,7 +232,7 @@ begin
         begin
           GetValue(CodeBuf, _p2); // copyobj
           Obj := TObj.Create(FObjMgr);
-          _p2._Type := pobject;
+          _p2._Type := pnewobject;
           _p2._Int := Obj.Id;
         end;
       inop:
@@ -361,8 +363,6 @@ begin
               begin
                 _p2._Type := pfuncaddr;
                 _p2._Int := _p1._Int;
-//                FPropTable.funcproptable[_p2._i] := FPropTable.funcproptable
-//                  [_p1._Int];
               end;
             pint:
               begin
@@ -378,6 +378,13 @@ begin
               begin
                 _p2._Type := pobject;
                 _p2._Int := _p1._Int;
+              end;
+            pnewobject:
+              begin
+                _p2._Type := pobject;
+                _p2._Int := _p1._Int;
+                _p1._Type := inone;
+                _p1._Int := _p1._Int;
               end;
           end;
         end;
@@ -588,6 +595,7 @@ begin
         end;
     end;
     Inc(FIP);
+    GarbageCollection;
   end;
 end;
 
@@ -595,6 +603,7 @@ procedure TExec.GarbageCollection;
 begin
   Mark;
   Sweep;
+  Inc(FGc);
 end;
 
 function TExec.GetStack(Index: Integer): PValue;
@@ -609,9 +618,30 @@ begin
   for I := 0 to  1024 * 1024 -1 do
   begin
     if globlevar[I]._Type = pstring then
+    begin
+      Write('G_Gc', FGc, ' ');
       StringList.Mark(globlevar[I]._Int);
+    end;
+    if (globlevar[I]._Type = pobject) or (globlevar[I]._Type = pnewobject) then
+    begin
+      Write('G_Gc', FGc, ' ');
+      FObjMgr.Mark(globlevar[I]._Int);
+    end;
   end;
 
+  for I := 0 to  1024 * 1024 -1 do
+  begin
+    if tempvar[I]._Type = pstring then
+    begin
+      Write('Temp Gc', FGc, ' ');
+      StringList.Mark(tempvar[I]._Int);
+    end;
+    if (tempvar[I]._Type = pobject) or (tempvar[I]._Type = pnewobject) then
+    begin
+      Write('Temp Gc', FGc, ' ');
+      FObjMgr.Mark(tempvar[I]._Int);
+    end;
+  end;
 end;
 
 function TExec.RegisterFunction(AFuncName: string; AFuncAddr: Pointer): Boolean;
@@ -632,6 +662,7 @@ end;
 procedure TExec.Sweep;
 begin
   StringList.Sweep;
+  FObjMgr.Sweep;
 end;
 
 end.
