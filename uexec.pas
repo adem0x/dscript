@@ -45,6 +45,9 @@ type
     procedure Mark;
     procedure Sweep;
     procedure GarbageCollection;
+    function ExecuteFunc(AFuncName: string): Boolean;
+    procedure SetParam(AValue: TValue);
+    function GetResult: TValue;
   end;
 
 implementation
@@ -663,6 +666,42 @@ procedure TExec.Sweep;
 begin
   StringList.Sweep;
   FObjMgr.Sweep;
+end;
+
+function TExec.ExecuteFunc(AFuncName: string): Boolean;
+var
+  I: Integer;
+  m_FuncProp: PFuncProp;
+begin
+  I:=0;
+  while True do
+  begin
+  m_FuncProp := FPropTable.funcproptable[I];
+  if not Assigned(m_FuncProp) then Break;
+  if LowerCase(m_FuncProp.FuncName) = LowerCase(AFuncName) then
+  begin
+    FCurrentUpValue := @m_FuncProp.UpValue;
+    Inc(CallESP);
+    Inc(EBP); //空出来放返回值的空间
+    CallStack[CallESP] := IP + 1;
+    FIP := m_FuncProp.EntryAddr;
+    Exec;
+    Break;
+  end;
+  Inc(I);
+  end;
+end;
+
+procedure TExec.SetParam(AValue: TValue);
+begin
+  Inc(FESP);
+  FStack[FESP] := AValue;
+end;
+
+function TExec.GetResult: TValue;
+begin
+  Result := FStack[FESP];
+  Dec(FESP);
 end;
 
 end.
