@@ -153,7 +153,7 @@ var
   m_obj: TObj;
 begin
   //FObjList.Count 这个count可能会多于实际对象的数量
-  for I:= 0 to FObjList.Count - 1 do
+  for I := 0 to FObjList.Count - 1 do
   begin
     m_obj := TObj(FObjList.Get(I));
     if not Assigned(m_obj) then Continue;
@@ -169,3 +169,4 @@ begin
 end;
 
 end.
+

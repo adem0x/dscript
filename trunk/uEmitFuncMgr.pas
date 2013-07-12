@@ -44,7 +44,7 @@ type
     function SaveCodeToList(AList: TList): Integer; //返回入口地址
     property FuncCount: Integer read GetFuncCount;
     property CurrentFunc: TEmitFunc read FCurrentFunc;
-    function FirstFunc:TEmitFunc;
+    function FirstFunc: TEmitFunc;
     function GetNextFunc(AFunc: TEmitFunc = nil): TEmitFunc;
     procedure AddClosureVar(AVarName: string);
     function GetFuncNum(AFunc: TEmitFunc): Integer;
@@ -162,7 +162,7 @@ begin
   FFunc.Add(FCurrentFunc);
   m_FuncProp.FuncName := FCurrentFunc.FFuncName;
   m_FuncProp.EntryAddr := m_CodeCount; //从0开始，所以不用加1
-  for I := 0 to Length(m_FuncProp.UpValue) -1 do
+  for I := 0 to Length(m_FuncProp.UpValue) - 1 do
   begin
     with m_FuncProp.UpValue[I] do
     begin
@@ -220,10 +220,10 @@ begin
   for I := 0 to FFunc.Count - 1 do
   begin
     if AFunc = FFunc[I] then
-      begin
-        Result := I;
-        Break;
-      end;
+    begin
+      Result := I;
+      Break;
+    end;
   end;
 
 end;
@@ -236,7 +236,7 @@ end;
 
 function TEmitFuncMgr.FirstFunc: TEmitFunc;
 begin
-  FCurrentFuncIndex:= 0;
+  FCurrentFuncIndex := 0;
   if FFunc.Count > 0 then
     Result := FFunc[0]
   else
@@ -256,18 +256,18 @@ begin
   end else
   begin
     for I := 0 to FFunc.Count - 1 do
+    begin
+      if AFunc = FFunc[I] then
       begin
-        if AFunc = FFunc[I] then
+        if (I + 1) < FFunc.Count then
         begin
-          if (I + 1) < FFunc.Count then
-          begin
-            FCurrentFuncIndex := I + 1;
-            Result := FFunc[FCurrentFuncIndex];
-          end;
-          Break;
+          FCurrentFuncIndex := I + 1;
+          Result := FFunc[FCurrentFuncIndex];
         end;
-
+        Break;
       end;
+
+    end;
   end;
 end;
 
