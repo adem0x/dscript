@@ -21,6 +21,7 @@ uses
   new
   for
   nil
+  require
   .
   <
   >
@@ -46,10 +47,11 @@ type
     tkfloatnum, tknum, tkaend, tkdot, tkequal, tkbigop, tksmallop, tkbigequalop,
     tksmallequalop, tkunequal, tkleftpart, tkrightpart, tksemicolon, tkstring,
     tkfunc, tkvar, tkcomma, tkbegin, tkreturn, tkret, tkbreak, tkcontinue,
-    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil, tkleftbracket, tkrightbracket);
+    tkmodop, tkleftbrace, tkrightbrace, tknew, tkfor, tknil, tkleftbracket,
+    tkrightbracket, tkrequire);
 
 var
-  KeyWord: array[0..17] of string = (
+  KeyWord: array[0..18] of string = (
     'read',
     'write',
     'if',
@@ -67,9 +69,10 @@ var
     'continue',
     'new',
     'for',
-    'nil'
+    'nil',
+    'require'
     );
-  KeyWordToken: array[0..17] of Token = (
+  KeyWordToken: array[0..18] of Token = (
     tkread,
     tkwrite,
     tkif,
@@ -87,7 +90,8 @@ var
     tkcontinue,
     tknew,
     tkfor,
-    tknil
+    tknil,
+    tkrequire
     );
 
 type
@@ -149,7 +153,7 @@ begin
         begin
           StateToken := tknum;
         end;
-      'a'..'z', 'A'..'Z', '_':
+      'a'..'z', 'A'..'Z', '_', '\':
         begin
           StateToken := tkident;
         end;
