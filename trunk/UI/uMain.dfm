@@ -12,6 +12,7 @@ object Form1: TForm1
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -63,5 +64,20 @@ object Form1: TForm1
     Width = 193
     Height = 21
     TabOrder = 3
+  end
+  object Button1: TButton
+    Left = 424
+    Top = 200
+    Width = 203
+    Height = 73
+    Caption = 'Stop!'
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 4
+    OnClick = Button1Click
   end
 end

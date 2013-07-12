@@ -18,9 +18,13 @@ type
     btnRun: TButton;
     Edit1: TEdit;
     Label1: TLabel;
+    Button1: TButton;
     procedure btnRunClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
+    FStop: Boolean;
     { Private declarations }
   public
     { Public declarations }
@@ -34,25 +38,36 @@ type
     procedure CoreRead(var S: string); overload; override;
   end;
 
+  TExecThread = class(TThread)
+  procedure Execute; override;
+  constructor Create;
+  end;
+
 var
   Form1: TForm1;
-
-implementation
-
-{$R *.dfm}
-
-procedure TForm1.btnRunClick(Sender: TObject);
-var
   Source: PAnsiChar;
   gExec: TExec;
   gEmitter: TEmitter;
   gPropTable: TPropTable;
   gParser: TParser;
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.btnRunClick(Sender: TObject);
 begin
   if mmoCode.Lines.Text <> '' then
   begin
     try
-      Source := PAnsiChar(mmoCode.Lines.Text);
+      FStop := True;              
+      Button1.Caption := 'Stop!';
+      Button1.Enabled := True;
+      btnRun.Enabled := False;
+      if Assigned(IO) then FreeAndNil(IO);
+      if Assigned(gPropTable) then FreeAndNil(gPropTable);
+      if Assigned(gExec) then FreeAndNil(gExec);
+      if Assigned(gEmitter) then FreeAndNil(gEmitter);
+      if Assigned(gParser) then FreeAndNil(gParser);
       IO := TFormIO.Create;
       gPropTable := TPropTable.Create;
       gExec := TExec.Create(gPropTable);
@@ -60,20 +75,16 @@ begin
       gEmitter.Opt := True;
       gParser := TParser.Create(gEmitter, gPropTable);
       gParser.Opt := True;
+      Source := PAnsiChar(mmoCode.Lines.Text);
       if gParser.parser(Source) then
       begin
         gExec.Exec;
       end;
-      gExec.Free;
-      gEmitter.Free;
-      gPropTable.Free;
-      gParser.Free;
-      IO.Free;
+      btnRun.Enabled := True;
     except
       on E: Exception do
         ShowMessage(E.ClassName + ': ' + E.Message);
     end;
-
   end;
 end;
 
@@ -134,7 +145,53 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  FStop := True;
   Dragacceptfiles(Form1.Handle,True);
+  Button1.Enabled := False;
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  if Assigned(IO) then FreeAndNil(IO);
+  if Assigned(gPropTable) then FreeAndNil(gPropTable);
+  if Assigned(gExec) then FreeAndNil(gExec);
+  if Assigned(gEmitter) then FreeAndNil(gEmitter);
+  if Assigned(gParser) then FreeAndNil(gParser);
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+  if not FStop then
+  begin
+    if gExec.Stoped then
+    begin
+      gExec.Stop := False;
+      TExecThread.Create();
+      btnRun.Enabled := False;
+    end
+  end else
+  begin
+    gExec.Stop := True;
+    btnRun.Enabled := True;
+  end;
+  FStop := not FStop;
+  if FStop then
+    Button1.Caption := 'Stop!'
+  else
+    Button1.Caption := 'ReRun!'
+end;
+{ TExecThread }
+
+constructor TExecThread.Create;
+begin
+  inherited Create(False);
+  FreeOnTerminate := True;
+end;
+
+procedure TExecThread.Execute;
+begin
+  inherited;
+  gExec.Exec;
 end;
 
 end.
