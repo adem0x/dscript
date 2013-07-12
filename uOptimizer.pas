@@ -14,65 +14,80 @@ call func
 pop a
 }
 
-function PeepHoleOptimize(ACode: TEmitFunc): TEmitFunc;
+procedure PeepHoleOptimize(ACode: TEmitFunc);
 implementation
 
-function PeepHoleOptimize(ACode: TEmitFunc): TEmitFunc;
+procedure PeepHoleOptimize(ACode: TEmitFunc);
 var
-  Value: TValue;
-  procedure GetValue(var P: PAnsiChar);
+  _p1, _p2: TValue;
+  function GetValue(var P: PAnsiChar): TValue;
   begin
-    Value._Type := _PEmitInts(P)^;
+    Result._Type := _PEmitInts(P)^;
     Inc(P, SizeOf(_TEmitInts));
-    Value._Int := PInteger(P)^;
+    Result._Int := PInteger(P)^;
+    Inc(P, SizeOf(Integer));
+  end;
+  procedure SetValue(var P: PAnsiChar; AValue: TValue);
+  begin
+    _PEmitInts(P)^ := AValue._Type;
+    Inc(P, SizeOf(_TEmitInts));
+    PInteger(P)^ := AValue._Int;
     Inc(P, SizeOf(Integer));
   end;
 var
-  CodeBuf: PAnsiChar;
+  CodeBuf, CodeBuf1, CodeBuf2: PAnsiChar;
   Ints: _TEmitInts;
   I: Integer;
 begin
-  I := 0;
-  while I >= ACode.CodeLineCount - 1 do
+  Exit;
+  {因为有删除代码，因此涉跳转的位移都要做调整，这个比较复杂，从前往后，只能处理正向
+  跳转，负向只能处理负向跳转，暂时没有想到好的方法，优化功能先屏蔽吧}
+  I := ACode.CodeLineCount - 1;
+  while I >= 0 do
   begin
     CodeBuf := ACode.Code[i];
     Ints := _PEmitInts(CodeBuf)^;
-    Inc(CodeBuf, SizeOf(_TEmitInts));
     case Ints of
-      igetobjv,
-        isub,
-        iadd,
-        imul,
-        idiv,
-        imod:
+      ijmp, ijse, ijbe, ijs, ijb, ije, ijne:
+      begin
+        _p1 := GetValue(CodeBuf);
+        if _p1._Int < 0 then Inc(I, _p1._Int)
+      end;
+      imov:
+      begin
+        //like
+        // icall xxx
+        // pop tempvar
+        // mov tempvar globlevar
+        //to
+        // icall xxx
+        // pop globlevar
+        CodeBuf1 := ACode.Code[i - 1];
+        Ints := _PEmitInts(CodeBuf1)^;
+        if Ints = ipop then
         begin
-          Inc(CodeBuf, (SizeOf(_TEmitInts) + SizeOf(Integer)) * 2);
-          GetValue(CodeBuf);
+          CodeBuf2 := ACode.Code[i - 2];
+          Ints := _PEmitInts(CodeBuf2)^;
+          if Ints = imov then
+          begin
+            Inc(CodeBuf1, SizeOf(_TEmitInts));
+            Inc(CodeBuf2, SizeOf(_TEmitInts));
+            _p1 := GetValue(CodeBuf1);
+            _p2 := GetValue(CodeBuf2);
+            if (_p1._Type = _p2._Type) and (_p1._Int = _p2._Int) then
+            begin
+              _p2 := GetValue(CodeBuf2);
+              CodeBuf1 := ACode.Code[i - 1];
+              Inc(CodeBuf1, SizeOf(_TEmitInts));
+              SetValue(CodeBuf1, _p2);
+              ACode.DeleteCode(I - 2);
+              Dec(I, 2);
+            end;
+          end;
         end;
-      imov,
-        icmp:
-        begin
-          Inc(CodeBuf, (SizeOf(_TEmitInts) + SizeOf(Integer)));
-          GetValue(CodeBuf);
-        end;
-      inewobj,
-        ipush,
-        ipop,
-        iebp,
-        icall,
-        iread,
-        iwrite:
-        begin
-          GetValue(CodeBuf);
-          Writeln('');
-        end;
+      end;
     end;
-  end;
-  Result := TEmitFunc.Create;
-  Result.FuncName := ACode.FuncName;
-  for I := 0 to ACode.CodeLineCount - 1 do
-  begin
-    Result.AddACode(ACode.Code[I])
+    Dec(I);
   end;
 end;
 
