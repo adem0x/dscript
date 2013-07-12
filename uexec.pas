@@ -26,9 +26,12 @@ type
     FCurrentUpValue: PValues;
     FMovclosureList: TList;
     FGc: Integer;
+    FStop: Boolean;
+    FStoped: Boolean;
     procedure RunError(S: string);
     function GetStack(Index: Integer): PValue;
     procedure SetStack(Index: Integer; const Value: PValue);
+    procedure SetStop(const Value: Boolean);
   public
     constructor Create(APropTable: TPropTable);
     procedure CoreExec();
@@ -48,6 +51,8 @@ type
     function ExecuteFunc(AFuncName: string): Boolean;
     procedure SetParam(AValue: TValue);
     function GetResult: TValue;
+    property Stop: Boolean read FStop write SetStop;
+    property Stoped: Boolean read FStoped;
   end;
 
 implementation
@@ -176,6 +181,7 @@ begin
   FGc := 0;
   while IP < IPEnd do
   begin
+    if FStop then Break;
     _p1 := @__p1;
     _p2 := @__p2;
     _p3 := @__p3;
@@ -704,6 +710,12 @@ function TExec.GetResult: TValue;
 begin
   Result := FStack[FESP];
   Dec(FESP);
+end;
+
+procedure TExec.SetStop(const Value: Boolean);
+begin
+  FStop := Value;
+  FStoped := True;
 end;
 
 end.
