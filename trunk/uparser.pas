@@ -808,8 +808,6 @@ var
   _p1,_p2,_p3: TEmitInts;
   LineNo, lineno2: Integer;
   S: string;
-  J: Integer;
-  m_list, m_list2: TStringList;
   m_func: TEmitFunc;
 begin
   FFrontListStack.Push(FFrontList);

@@ -37,11 +37,11 @@ end;
 
 begin
 //
-  with TStringList.Create do
-  begin
-    LoadFromFile('test\3.lua');
-    Source := PAnsiChar(AnsiString(GetText));
-  end;
+//  with TStringList.Create do
+//  begin
+//    LoadFromFile('test\3.lua');
+//    Source := PAnsiChar(AnsiString(GetText));
+//  end;
 
 //  Source := 'add = function(a, b) return a+ b; end; add2 = add; write add(5, 2)';
 //   Source := 'c= 4*3 / 2; write c';
@@ -55,7 +55,7 @@ begin
 //   Source := 'add = function(a,b)  var c= a + b; return c end;' +
 //   'function add2(a,b) d= add(a, b) * 2; return d end;'+
 //   'f = add(add2(1,2), 3); write f';
-   Source := 's = ''100''; print(s)';
+//   Source := 's = ''9999''; print(s); s = 1; print(s);';
 //   Source := 'f = {i}; f.i = 100; write f.i;' ;
   // Source := 'i = 10; while i > 0 do i = i - 1; if i % 2 = 0 then continue  end; write i end;';
 //   Source := 'f = {i = 10; next = ''abc''}; write f.next; ';
@@ -71,7 +71,7 @@ begin
 //  Source := 'function add(a,b)  return add2(2)  end;   function add2(a) return a * 2 end  i = add(1, 2); write i';
 //  Source := 'function rec(a) if a > 1 then return rec(a - 1 ) else return 1 end; end; write rec(10)';
 //  Source :='f ={}; b = function() return 100; end; f.a = b; write f.a()';
-//  Source :='f = {i = 10}; write f.i;';
+  Source :='f = {i = 10}; write f.i; f = 100; write f;';
 //  Source := 'f = {}; for i = 1, 10 do f[i] = i * i; end; for i = 1, 10 do write f[i]; end; write f[5]';
 //    Source := 'a = {}; b = {i = 88}; a.prototype = b; write a.i';
 //  Source := 'f = {add2 = function(c,d) function add(a, b) return a + b; end; return c + d + add(c, d); end;};write f.add2(1, 5)';

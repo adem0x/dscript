@@ -184,7 +184,7 @@ begin
   FuncNameList := TStringList.Create;
   FuncNameList.Add(CZeroStr);
   StrList := TStringList.Create;
-  StrList.Add(CZeroStr);
+//  StrList.Add(CZeroStr);
   FValueList := TStringList.Create;
   FValueList.Add('prototype');
   FTempVarListStack := TStack.Create;

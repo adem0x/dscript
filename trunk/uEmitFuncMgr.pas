@@ -10,7 +10,6 @@ type
     FFuncName: string;
     FCodeLineCount: Integer;
     FCode: array of PAnsiChar;
-    FLastCode: array of PAnsiChar;
     FCodeBufSize: Integer;
     FClosureVarList: TStringList;
     function GetCode(Index: Integer): PAnsiChar;
@@ -25,8 +24,6 @@ type
     property Code[Index: Integer]: PAnsiChar read GetCode;
     procedure AddClosureVar(AVarName: string);
     function FindAColsureVar(AVarName: string): Boolean;
-    function AddALastCode(ACode: PAnsiChar): Boolean;
-    procedure EndFunc;
   end;
 
   TEmitFuncMgr = class
@@ -71,13 +68,6 @@ begin
   Result := True;
 end;
 
-function TEmitFunc.AddALastCode(ACode: PAnsiChar): Boolean;
-begin
-  Exit;
-  SetLength(FLastCode, Length(FLastCode) + 1);
-  FLastCode[Length(FLastCode) - 1] := ACode;
-end;
-
 procedure TEmitFunc.AddClosureVar(AVarName: string);
 begin
   FClosureVarList.Add(AVarName)
@@ -112,14 +102,6 @@ destructor TEmitFunc.Destroy;
 begin
   FClosureVarList.Free;
   inherited;
-end;
-
-procedure TEmitFunc.EndFunc;
-var
-  I: Integer;
-begin
-  for I := 0 to Length(FLastCode) - 1 do
-    AddACode(FLastCode[I])
 end;
 
 function TEmitFunc.FindAColsureVar(AVarName: string): Boolean;
@@ -178,7 +160,6 @@ begin
   for I := 0 to FFunc.Count - 1 do
     Inc(m_CodeCount, TEmitFunc(FFunc[I]).CodeLineCount);
   FFunc.Add(FCurrentFunc);
-  FCurrentFunc.EndFunc;
   m_FuncProp.FuncName := FCurrentFunc.FFuncName;
   m_FuncProp.EntryAddr := m_CodeCount; //从0开始，所以不用加1
   for I := 0 to Length(m_FuncProp.UpValue) -1 do

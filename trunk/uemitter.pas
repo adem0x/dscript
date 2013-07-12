@@ -67,8 +67,6 @@ begin
 end;
 
 procedure TEmitter.ToExec;
-var
-  I: Integer;
 begin
   FExec.Code.Clear;
   FExec.IP := EmitFuncMgr.SaveCodeToList(FExec.Code);

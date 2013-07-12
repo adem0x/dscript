@@ -3,7 +3,7 @@ unit uObjMgr;
 interface
 
 uses
-  uconst, Classes, IniFiles;
+  uconst, Classes, uDataStruct;
 
 type
   TObjMgr = class;
@@ -13,6 +13,7 @@ type
     FValues, FValues2: array of TValue;
     FValuesCount, FValuesCount2: Integer;
     FId: Integer;
+    FMark: Boolean;
   public
     constructor Create(AObjMgr: TObjMgr);
     function FindAValue(AName: Integer): PValue;
@@ -24,14 +25,15 @@ type
 
   TObjMgr = class
   private
-    FObjList: TList;
+    FObjList: TQuickObjectList;
   public
     constructor Create;
     destructor Destroy; override;
-    function DeleteAObject(AIndex: Integer): Integer;
+    function DeleteAObject(AIndex: Integer): Boolean;
     function AddAObject(AObj: TObj): Integer;
     function GetAObject(AIndex: Integer): TObj;
-    function ObjectCount: Integer;
+    procedure Mark(AIndex: Integer);
+    procedure Sweep;
   end;
 
 implementation
@@ -116,42 +118,54 @@ end;
 
 constructor TObjMgr.Create;
 begin
-  FObjList := TList.Create;
-  FObjList.Add(nil);
+  FObjList := TQuickObjectList.Create;
 end;
 
-function TObjMgr.DeleteAObject(AIndex: Integer): Integer;
+function TObjMgr.DeleteAObject(AIndex: Integer): Boolean;
 begin
-  Result := -1;
-  if AIndex < FObjList.Count then
-  begin
-    TObj(FObjList[AIndex]).Free;
-    FObjList.Delete(AIndex);
-  end;
+  Result := FObjList.Delete(AIndex)
 end;
 
 destructor TObjMgr.Destroy;
-var
-  I: Integer;
 begin
-  for I := 0 to FObjList.Count - 1 do
-  begin
-    TObject(FObjList[I]).Free;
-  end;
   FObjList.Free;
   inherited;
 end;
 
 function TObjMgr.GetAObject(AIndex: Integer): TObj;
 begin
-  Result := nil;
-  if AIndex < FObjList.Count then
-    Result := FObjList[AIndex]
+  Result := TObj(FObjList.Get(AIndex));
 end;
 
-function TObjMgr.ObjectCount: Integer;
+procedure TObjMgr.Mark(AIndex: Integer);
+var
+  obj: TObj;
 begin
-  Result := FObjList.Count
+  obj := TObj(FObjList.Get(AIndex));
+  if not Assigned(obj) then Exit;
+  obj.FMark := True;
+  Writeln('Mark Obj ', AIndex);
+end;
+
+procedure TObjMgr.Sweep;
+var
+  I: Integer;
+  m_obj: TObj;
+begin
+  //FObjList.Count 这个count可能会多于实际对象的数量
+  for I:= 0 to FObjList.Count - 1 do
+  begin
+    m_obj := TObj(FObjList.Get(I));
+    if not Assigned(m_obj) then Continue;
+    if not m_obj.FMark then
+    begin
+      FObjList.Delete(I);
+      Writeln('Sweep Obj ', I);
+    end
+    else
+      m_obj.FMark := False;
+  end;
+
 end;
 
 end.
