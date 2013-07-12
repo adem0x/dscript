@@ -50,7 +50,7 @@ type
   public
     constructor Create(AEmitter: TEmitter; APropTable: TPropTable);
     destructor Destroy; override;
-    procedure parser(ASource: PAnsiChar);
+    function parser(ASource: PAnsiChar): Boolean;
     procedure ParserError(s: string);
     function Stmt_sequence: TEmitInts;
     function statement: TEmitInts;
@@ -998,10 +998,10 @@ begin
   FFrontList.Add(Pointer(FEmitter.emitnop()));
 end;
 
-procedure TParser.parser(ASource: PAnsiChar);
+function TParser.parser(ASource: PAnsiChar): Boolean;
 begin
-  if ASource = nil then
-    Exit;
+  Result := False;
+  if ASource = nil then Exit;
   FLex.Source := ASource;
   while True do
   begin
@@ -1014,6 +1014,7 @@ begin
     Stmt_sequence;
   end;
   ToEmitter;
+  Result := True;
 end;
 
 function TParser.reversedop(AEmitInts: _TEmitInts): _TEmitInts;
