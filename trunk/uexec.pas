@@ -84,7 +84,7 @@ end;
 
 procedure TExec.CoreExec();
 var
-  CodeBuf: PAnsiChar;
+  CodeBuf, CodeBuf1: PAnsiChar;
   Ints: _TEmitInts;
   _p1, _p2, _p3, _pt: PValue;
   __p1, __p2, __p3: TValue;
@@ -260,12 +260,12 @@ begin
         //closure一定有临时变量，有临时变量一定有iebp
           while FMovclosureList.Count <> 0 do
           begin
-            CodeBuf := FMovclosureList[FMovclosureList.Count - 1];
+            CodeBuf1 := FMovclosureList[FMovclosureList.Count - 1];
             FMovclosureList.Delete(FMovclosureList.Count - 1);
-            Inc(CodeBuf, SizeOf(_TEmitInts));
-            GetValue(CodeBuf, _p1); // func
-            GetValue(CodeBuf, _p2); // upvalue
-            GetValue(CodeBuf, _p3); // tempvar
+            Inc(CodeBuf1, SizeOf(_TEmitInts));
+            GetValue(CodeBuf1, _p1); // func
+            GetValue(CodeBuf1, _p2); // upvalue
+            GetValue(CodeBuf1, _p3); // tempvar
             m_FuncProp := FPropTable.funcproptable[_p1._Int];
             m_FuncProp.UpValue[-_p2._Int] := _p3^;
           end;
@@ -622,12 +622,12 @@ begin
   begin
     if globlevar[I]._Type = pstring then
     begin
-      Write('G_Gc', FGc, ' ');
+      CoreWrite('G_Gc' + IntToStr(FGc) + ' ');
       StringList.Mark(globlevar[I]._Int);
     end;
     if (globlevar[I]._Type = pobject) or (globlevar[I]._Type = pnewobject) then
     begin
-      Write('G_Gc', FGc, ' ');
+      CoreWrite('G_Gc' + IntToStr(FGc) + ' ');
       FObjMgr.Mark(globlevar[I]._Int);
     end;
   end;
@@ -636,12 +636,12 @@ begin
   begin
     if tempvar[I]._Type = pstring then
     begin
-      Write('Temp Gc', FGc, ' ');
+      CoreWrite('Temp Gc' + IntToStr(FGc) + ' ');
       StringList.Mark(tempvar[I]._Int);
     end;
     if (tempvar[I]._Type = pobject) or (tempvar[I]._Type = pnewobject) then
     begin
-      Write('Temp Gc', FGc, ' ');
+      CoreWrite('Temp Gc' + IntToStr(FGc) + ' ');
       FObjMgr.Mark(tempvar[I]._Int);
     end;
   end;
