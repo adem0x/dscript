@@ -91,12 +91,14 @@ end;
 
 procedure TFormIO.CoreWrite(I: integer);
 begin
-  Form1.mmoResult.Lines.Add(IntToStr(I))
+  Form1.mmoResult.Lines.Add(IntToStr(I));
+  Application.ProcessMessages;
 end;
 
 procedure TFormIO.CoreWrite(S: string);
 begin
-  Form1.mmoResult.Lines.Add(S)
+  Form1.mmoResult.Lines.Add(S);
+  Application.ProcessMessages;
 end;
 
 procedure TForm1.DropFiles(var message: Tmessage);
