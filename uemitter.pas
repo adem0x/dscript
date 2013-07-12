@@ -221,7 +221,9 @@ begin
   emitparam(_p1);
   emitparam(_p2);
   emitparam(_p3);
+{$IFDEF emit}
   Writeln;
+{$ENDIF}
   GetMem(buf, m.Size);
   Move(m.Memory^, buf^, m.Size);
   if LineNo = -1 then

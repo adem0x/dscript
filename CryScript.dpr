@@ -14,7 +14,8 @@ uses
   uobjmgr in 'uobjmgr.pas',
   uEmitFuncMgr in 'uEmitFuncMgr.pas',
   uOptimizer in 'uOptimizer.pas',
-  uDataStruct in 'uDataStruct.pas';
+  uDataStruct in 'uDataStruct.pas',
+  mycontnrs in 'mycontnrs.pas';
 
 var
   Source: PAnsiChar;
@@ -38,13 +39,13 @@ end;
 begin
   Source := nil;
 //
-//  with TStringList.Create do
-//  begin
-//    LoadFromFile('test\3.lua');
-//    Source := PAnsiChar(AnsiString(GetText));
-//  end;
+  with TStringList.Create do
+  begin
+    LoadFromFile('test\2.lua');
+    Source := PAnsiChar(AnsiString(GetText));
+  end;
 
-  Source := 'require ''test\add'' a = add.add(5, 2); write a';
+//  Source := 'require ''test\add'' a = add.add(5, 2); write a';
 //  Source := 'c= 4*3 / 2; write c';
 //  Source := 'a= 4; b = 5; c= a + b * 2 / 3; write c';
 //  Source := 'a = 3; b = 2; c = 5; if a < b then c=a end write c ';
@@ -78,6 +79,7 @@ begin
 //  Source := 'f = {add2 = function(c,d) function add(a, b) return a + b; end; return c + d + add(c, d); end;};write f.add2(1, 5)';
 //  Source := 'function add2(c,d) return c + d; end; function add(a, b)  return a + b + add2(a, b); end; write add(1, 5)';
   try
+    IO := TConsoleIO.Create;
     gPropTable := TPropTable.Create;
     gExec := TExec.Create(gPropTable);
     gEmitter := TEmitter.Create(gExec, gPropTable);

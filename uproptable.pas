@@ -3,7 +3,7 @@ unit uPropTable;
 interface
 
 uses
-  uconst, Classes, Contnrs;
+  uconst, Classes, mycontnrs;
 
 type
   PFuncProp = ^TFuncProp;
