@@ -14,7 +14,6 @@ uses
   uobjmgr in 'uobjmgr.pas',
   uEmitFuncMgr in 'uEmitFuncMgr.pas',
   uOptimizer in 'uOptimizer.pas',
-  uEnvironment in 'uEnvironment.pas',
   uDataStruct in 'uDataStruct.pas';
 
 var
@@ -37,6 +36,7 @@ begin
 end;
 
 begin
+  Source := nil;
 //
 //  with TStringList.Create do
 //  begin
@@ -84,13 +84,12 @@ begin
     gEmitter.Opt := True;
     gParser := TParser.Create(gEmitter, gPropTable);
     gParser.Opt := True;
-    gParser.parser(Source);
-    Writeln;
-    Writeln('parser over!');
-    Writeln('exec start!');
-    gExec.RegisterFunction('print', @MyWrite);
-    gExec.Exec;
-    Writeln('exec end!');
+    if gParser.parser(Source) then
+    begin
+      gExec.RegisterFunction('print', @MyWrite);
+      Writeln('exec start!');
+      gExec.Exec;
+      Writeln('exec end!');
 //    p1._Type := pint;
 //    p1._Int := 10;
 //    gExec.SetParam(p1);
@@ -100,7 +99,8 @@ begin
 //    gExec.ExecuteFunc('add');
 //    p1 := gExec.GetResult;
 //    Writeln(p1._int);
-    MyWrite;
+//    MyWrite;
+    end;
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
